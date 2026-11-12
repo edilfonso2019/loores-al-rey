@@ -1,0 +1,22 @@
+[
+  {
+    "book": "nuevo",
+    "number": 26,
+    "title": "Santo, santo, santo",
+    "category": "Adoración y alabanza",
+    "verses": [
+      {"text": "¡Santo! ¡Santo! ¡Santo! Señor omnipotente,\nsiempre el labio mío loores te dará.\n¡Santo! ¡Santo! ¡Santo! te adoro reverente,\nDios en tres personas, bendita Trinidad."},
+      {"text": "¡Santo! ¡Santo! ¡Santo! en numeroso coro,\nsantos escogidos te adoran sin cesar,\nde alegría llenos, y sus coronas de oro\nrinden ante el trono y el cristalino mar."}
+    ]
+  },
+  {
+    "book": "nuevo",
+    "number": 999,
+    "title": "EJEMPLO — reemplazar por el himnario completo",
+    "category": "Ejemplo",
+    "verses": [
+      {"text": "Este himno es un marcador de posición.\nImporta los 613 himnos del Himnario 2010 con tools/import_hymns.py."},
+      {"text": "Este bloque es un coro de ejemplo.", "chorus": true}
+    ]
+  }
+]
