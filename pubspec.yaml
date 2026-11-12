@@ -27,4 +27,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/data/
+    - assets/data/clasico.json
+    - assets/data/cg.json
