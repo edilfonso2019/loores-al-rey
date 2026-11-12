@@ -1,125 +1,156 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../data/hymn_repository.dart';
 import '../models/hymn.dart';
-import '../services/app_state.dart';
-import '../widgets/hymn_tile.dart';
-import 'hymn_screen.dart';
-import 'settings_screen.dart';
+import '../theme/app_theme.dart';
+import '../widgets/common.dart';
+import '../widgets/mini_player.dart';
+import 'shell_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+/// Inicio (Figma 2415:988): foto del violín, logo y botones de himnario.
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  final _search = TextEditingController();
-  int _tab = 0; // 0 = todos, 1 = favoritos, 2 = recientes
-
-  @override
-  void dispose() {
-    _search.dispose();
-    super.dispose();
-  }
-
-  List<Hymn> _items(AppState state) {
-    final repo = HymnRepository.instance;
-    switch (_tab) {
-      case 1:
-        return state.favorites
-            .map(repo.byId)
-            .whereType<Hymn>()
-            .where((h) => h.book == state.book)
-            .toList();
-      case 2:
-        return state.history
-            .map(repo.byId)
-            .whereType<Hymn>()
-            .where((h) => h.book == state.book)
-            .toList();
-      default:
-        return repo.search(state.book, _search.text);
-    }
-  }
-
-  void _open(Hymn hymn) {
-    context.read<AppState>().pushHistory(hymn.id);
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => HymnScreen(hymn: hymn)),
+  Widget build(BuildContext context) {
+    final hymnals = HymnRepository.instance.hymnals;
+    final size = MediaQuery.sizeOf(context);
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: ColoredBox(
+        color: Brand.azul,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _Cover(height: (size.height * 0.62).clamp(360, 560)),
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 28,
+                        runSpacing: 16,
+                        children: [
+                          for (final h in hymnals) _HymnalButton(hymnal: h),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+            const MiniPlayer(),
+          ],
+        ),
+      ),
     );
   }
+}
+
+class _Cover extends StatelessWidget {
+  const _Cover({required this.height});
+  final double height;
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
-    final items = _items(state);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: state.book,
-            items: HymnRepository.books.entries
-                .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-                .toList(),
-            onChanged: (v) => v == null ? null : state.setBook(v),
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Foto del Figma (ya incluye "Himnario Loores al Rey").
+          Image.asset(
+            'assets/images/portada.png',
+            fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
+            filterQuality: FilterQuality.medium,
+            semanticLabel: 'Himnario Loores al Rey, Asociación Metropolitana UP',
           ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+          // Fundido hacia el azul de marca.
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: [0.0, 0.2, 0.85, 1.0],
+                colors: [Color(0x660A245E), Color(0x000A245E), Color(0x000A245E), Brand.azul],
+              ),
             ),
           ),
         ],
       ),
-      body: Column(
+    );
+  }
+}
+
+class _HymnalButton extends StatelessWidget {
+  const _HymnalButton({required this.hymnal});
+  final Hymnal hymnal;
+
+  @override
+  Widget build(BuildContext context) {
+    final soon = !hymnal.activo;
+    final words = hymnal.nombre.split(' ');
+    final label = words.length > 1
+        ? '${words.first}\n${words.skip(1).join(' ')}'
+        : hymnal.nombre;
+    return SizedBox(
+      width: 126,
+      height: 78,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          if (_tab == 0)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: TextField(
-                controller: _search,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  hintText: 'Número, título o letra…',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _search.text.isEmpty
-                      ? null
-                      : IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () => setState(_search.clear),
-                        ),
-                  border: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
+          Positioned.fill(
+            child: Material(
+              color: soon ? Brand.fondo.withValues(alpha: 0.75) : Brand.fondo,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  if (soon) {
+                    showSnack(context, '${hymnal.nombre}: próximamente.');
+                  } else {
+                    context.read<NavController>().openSearch(book: hymnal.id);
+                  }
+                },
+                child: Center(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Brand.azul,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      height: 1.35,
+                    ),
                   ),
                 ),
               ),
             ),
-          Expanded(
-            child: items.isEmpty
-                ? const Center(child: Text('Sin resultados'))
-                : ListView.builder(
-                    itemCount: items.length,
-                    itemBuilder: (_, i) => HymnTile(
-                      hymn: items[i],
-                      onTap: () => _open(items[i]),
-                    ),
-                  ),
           ),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.library_music_outlined), label: 'Himnos'),
-          NavigationDestination(icon: Icon(Icons.favorite_outline), label: 'Favoritos'),
-          NavigationDestination(icon: Icon(Icons.history), label: 'Recientes'),
+          if (soon)
+            Positioned(
+              top: -10,
+              right: -8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Brand.dorado,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'Próximamente',
+                  style: TextStyle(color: Brand.azul, fontSize: 11, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
         ],
       ),
     );

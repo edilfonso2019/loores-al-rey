@@ -10,22 +10,48 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^2.0.0
   provider: ^6.1.2
   shared_preferences: ^2.3.2
   path_provider: ^2.1.4
-  share_plus: ^10.0.2
-  google_fonts: ^6.2.1
-  just_audio: ^0.9.40
+  share_plus: ^13.3.1
+  just_audio: ^0.10.6
   wakelock_plus: ^1.2.8
+  just_audio_background: ^0.0.1-beta.17
+  http: ^1.6.0
+  pdfrx: ^2.12.0
+  file_picker: ^13.3.3
+  google_sign_in: ^7.2.0
+  googleapis: ^18.0.0
+  extension_google_sign_in_as_googleapis_auth: ^3.0.0
+  path: ^1.9.1
+  crypto: ^3.0.8
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true
   assets:
     - assets/data/clasico.json
     - assets/data/cg.json
+    - assets/images/portada.png
+  fonts:
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/NotoSans-Regular.ttf
+        - asset: assets/fonts/NotoSans-Italic.ttf
+          style: italic
+        - asset: assets/fonts/NotoSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/NotoSans-Bold.ttf
+          weight: 700
+    - family: GreatVibes
+      fonts:
+        - asset: assets/fonts/GreatVibes-Regular.ttf

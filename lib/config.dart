@@ -1,0 +1,37 @@
+/// Configuración del servidor de pistas y partituras, por himnario.
+///
+/// Las plantillas usan `{n}` como número de himno. Para el Himnario CG basta
+/// con agregar su entrada aquí (o un bloque `"servidor"` en `cg.json`) cuando
+/// exista el material.
+class ServerConfig {
+  final String instrumental;
+  final String cantado;
+  final String partitura;
+
+  const ServerConfig({
+    required this.instrumental,
+    required this.cantado,
+    required this.partitura,
+  });
+
+  factory ServerConfig.fromJson(Map<String, dynamic> json) => ServerConfig(
+        instrumental: json['instrumental'] as String,
+        cantado: json['cantado'] as String,
+        partitura: json['partitura'] as String,
+      );
+}
+
+const _base = 'http://192.241.144.242';
+
+/// Servidores por id de himnario. Si un himnario no aparece aquí y su JSON
+/// no trae `"servidor"`, la app simplemente no ofrece audio ni partituras.
+const Map<String, ServerConfig> kServidores = {
+  'clasico': ServerConfig(
+    instrumental: '$_base/pista_instrumental/himno_instrumental_{n}.mp3',
+    cantado: '$_base/pista_cantado/himno_cantado_{n}.mp3',
+    partitura: '$_base/partitura/himno_partitura_{n}.pdf',
+  ),
+};
+
+/// Nombre del archivo de respaldo (local y en Google Drive, carpeta appData).
+const kNombreRespaldo = 'loores_al_rey_respaldo.json';
