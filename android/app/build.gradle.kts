@@ -14,7 +14,8 @@ val keyProps = Properties().apply {
 
 android {
     namespace = "pe.looresalrey.app"
-    compileSdk = flutter.compileSdkVersion
+    // permission_handler exige compilar contra API 37 (targetSdk no cambia).
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

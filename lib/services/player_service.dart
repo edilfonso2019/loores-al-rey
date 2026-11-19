@@ -8,6 +8,7 @@ import '../data/hymn_repository.dart';
 import '../models/hymn.dart';
 import 'app_state.dart';
 import 'media_service.dart';
+import 'notification_permission.dart';
 
 /// Reproductor único de la app (instrumental o cantado), con controles en
 /// la notificación (just_audio_background) y "tocar continuamente".
@@ -60,6 +61,8 @@ class PlayerService extends ChangeNotifier {
     error = null;
     loading = true;
     notifyListeners();
+    // Sin este permiso, Android oculta los controles en la notificación.
+    await NotificationPermission.ensure();
     final uri = _media.sourceUri(h, k);
     try {
       if (uri == null) {

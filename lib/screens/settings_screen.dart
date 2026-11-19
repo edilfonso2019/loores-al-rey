@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/app_state.dart';
+import '../services/notification_permission.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import 'backup_screen.dart';
@@ -86,6 +87,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           // Donación: oculto en v1.
           header('REPRODUCTOR'),
+          const _NotificationPermissionTile(),
           SwitchListTile(
             secondary: const Icon(Icons.play_arrow),
             title: const Text('Tocar continuamente'),
@@ -210,6 +212,59 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Aviso visible solo si el permiso de notificaciones está desactivado.
+class _NotificationPermissionTile extends StatefulWidget {
+  const _NotificationPermissionTile();
+
+  @override
+  State<_NotificationPermissionTile> createState() =>
+      _NotificationPermissionTileState();
+}
+
+class _NotificationPermissionTileState
+    extends State<_NotificationPermissionTile>
+    with WidgetsBindingObserver {
+  bool _granted = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _check();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Al volver de los ajustes del sistema, se vuelve a comprobar.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _check();
+  }
+
+  Future<void> _check() async {
+    final g = await NotificationPermission.granted();
+    if (mounted && g != _granted) setState(() => _granted = g);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_granted) return const SizedBox.shrink();
+    return const ListTile(
+      leading: Icon(Icons.notifications_off_outlined, color: Brand.coral),
+      title: Text('Activar controles en la notificación'),
+      subtitle: Text(
+        'Para pausar o cambiar de himno desde la pantalla de bloqueo',
+      ),
+      trailing: Icon(Icons.open_in_new_rounded, size: 18),
+      onTap: NotificationPermission.openSettings,
     );
   }
 }
