@@ -65,8 +65,18 @@ class MediaService extends ChangeNotifier {
 
   static String key(Hymn h, MediaKind k) => '${h.id}-${k.name}';
 
+  /// false si el dispositivo no permite guardar archivos (p. ej. web).
+  bool get canDownload => _root != null;
+
   Future<void> init() async {
-    final docs = await _baseDir();
+    final Directory docs;
+    try {
+      docs = await _baseDir();
+    } catch (_) {
+      // Sin carpeta de documentos (web o error del sistema): solo streaming.
+      notifyListeners();
+      return;
+    }
     _root = Directory(p.join(docs.path, 'descargas'));
     if (await _root!.exists()) {
       await for (final e in _root!.list(recursive: true)) {
@@ -175,6 +185,9 @@ class MediaService extends ChangeNotifier {
   }
 
   Future<File> _download(Hymn h, MediaKind k) async {
+    if (!canDownload) {
+      throw const MediaNotAvailable('Las descargas no están disponibles en este dispositivo.');
+    }
     final url = remoteUrl(h, k);
     if (url == null) {
       throw const MediaNotAvailable('Este himnario aún no tiene material en el servidor.');
@@ -232,6 +245,7 @@ class MediaService extends ChangeNotifier {
   }
 
   Future<void> delete(Hymn h, MediaKind k) async {
+    if (!canDownload) return;
     final f = _fileFor(h, k);
     if (await f.exists()) await f.delete();
     _downloaded.remove(key(h, k));

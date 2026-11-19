@@ -35,7 +35,7 @@ class FavoritesScreen extends StatelessWidget {
             indicatorColor: Brand.dorado,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-            tabs: [Tab(text: 'Favoritos'), Tab(text: 'Listas de culto'), Tab(text: 'Recientes')],
+            tabs: [Tab(text: 'Favoritos'), Tab(text: 'Listas'), Tab(text: 'Recientes')],
           ),
         ),
         body: const TabBarView(children: [_FavoritesTab(), _PlaylistsTab(), _HistoryTab()]),

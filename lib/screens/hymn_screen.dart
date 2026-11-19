@@ -235,7 +235,10 @@ class _FavoriteButton extends StatelessWidget {
       child: IconButton(
         tooltip: fav ? 'Quitar de favoritos' : 'Agregar a favoritos',
         iconSize: 28,
-        icon: Icon(fav ? Icons.favorite : Icons.favorite_border, color: fav ? Brand.coral : Brand.azul),
+        icon: Icon(
+          fav ? Icons.favorite : Icons.favorite_border,
+          color: fav ? Brand.coral : Theme.of(context).colorScheme.primary,
+        ),
         onPressed: () {
           context.read<AppState>().toggleFavorite(id);
           showSnack(context, fav ? 'Quitado de favoritos' : 'Agregado a favoritos');
@@ -499,7 +502,9 @@ class _KindTabs extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: k == kind ? Brand.azul : (dark ? const Color(0xFF2A3550) : const Color(0xFFDADADA)),
+                        color: k == kind
+                            ? (dark ? Brand.azulClaro : Brand.azul)
+                            : (dark ? const Color(0xFF2A3550) : const Color(0xFFDADADA)),
                         border: const Border(right: BorderSide(color: Colors.white, width: 1)),
                       ),
                       child: Text(

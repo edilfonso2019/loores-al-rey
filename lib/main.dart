@@ -13,12 +13,17 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await JustAudioBackground.init(
-    androidNotificationChannelId: 'pe.looresalrey.app.audio',
-    androidNotificationChannelName: 'Reproducción de himnos',
-    androidNotificationOngoing: true,
-    notificationColor: Brand.azul,
-  );
+  try {
+    await JustAudioBackground.init(
+      androidNotificationChannelId: 'pe.looresalrey.app.audio',
+      androidNotificationChannelName: 'Reproducción de himnos',
+      androidNotificationOngoing: true,
+      notificationColor: Brand.azul,
+    );
+  } catch (e) {
+    // Sin controles en la notificación, pero la app sigue funcionando.
+    debugPrint('JustAudioBackground no disponible: $e');
+  }
   final state = AppState();
   final media = MediaService();
   await Future.wait([

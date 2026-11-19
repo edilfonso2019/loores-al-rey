@@ -53,6 +53,8 @@ class ShellScreen extends StatelessWidget {
         if (!didPop) nav.go(0);
       },
       child: Scaffold(
+        // En Inicio, las esquinas redondeadas de la barra dejan ver el azul.
+        backgroundColor: nav.index == 0 ? Brand.azul : null,
         body: IndexedStack(index: nav.index, children: _tabs),
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min,
