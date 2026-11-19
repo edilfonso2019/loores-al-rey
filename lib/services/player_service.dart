@@ -2,18 +2,28 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_background/just_audio_background.dart';
+import 'package:audio_service/audio_service.dart';
 
 import '../data/hymn_repository.dart';
 import '../models/hymn.dart';
 import 'app_state.dart';
+import 'audio_handler.dart';
 import 'media_service.dart';
 import 'notification_permission.dart';
 
 /// Reproductor único de la app (instrumental o cantado), con controles en
-/// la notificación (just_audio_background) y "tocar continuamente".
+/// la notificación ([HymnAudioHandler]) y "tocar continuamente".
 class PlayerService extends ChangeNotifier {
-  PlayerService(this._media, this._state) {
+  PlayerService(this._media, this._state, [this._handler])
+    : player = _handler?.player ?? AudioPlayer() {
+    // Botones de la notificación / pantalla de bloqueo.
+    _handler?.onNext = () async {
+      await next();
+    };
+    _handler?.onPrevious = () async {
+      await previous();
+    };
+    _handler?.onStop = stop;
     _subs.add(
       player.playerStateStream.listen((s) {
         if (s.processingState == ProcessingState.completed) {
@@ -26,7 +36,8 @@ class PlayerService extends ChangeNotifier {
 
   final MediaService _media;
   final AppState _state;
-  final AudioPlayer player = AudioPlayer();
+  final HymnAudioHandler? _handler;
+  final AudioPlayer player;
   final List<StreamSubscription<dynamic>> _subs = [];
 
   Hymn? current;
@@ -82,17 +93,20 @@ class PlayerService extends ChangeNotifier {
       // Si mientras se consultaba el usuario eligió otro himno, no sigas.
       if (!isCurrent(h, k)) return;
       final hymnal = HymnRepository.instance.hymnal(h.book);
-      await player.setAudioSource(
-        AudioSource.uri(
-          uri,
-          tag: MediaItem(
-            id: '${h.id}-${k.name}',
-            title: '${h.number}. ${h.title}',
-            album: '${hymnal?.nombre ?? 'Loores al Rey'} · ${k.label}',
-            artist: h.autor ?? 'Loores al Rey',
-          ),
+      _handler?.setNowPlaying(
+        MediaItem(
+          id: '${h.id}-${k.name}',
+          title: '${h.number}. ${h.title}',
+          album: '${hymnal?.nombre ?? 'Loores al Rey'} · ${k.label}',
+          artist: queueName ?? h.autor ?? 'Loores al Rey',
         ),
       );
+      final duration = await player.setAudioSource(AudioSource.uri(uri));
+      if (duration != null && _handler != null) {
+        _handler.setNowPlaying(
+          _handler.mediaItem.value!.copyWith(duration: duration),
+        );
+      }
       loading = false;
       notifyListeners();
       unawaited(player.play());
@@ -143,7 +157,11 @@ class PlayerService extends ChangeNotifier {
   Future<void> seek(Duration d) => player.seek(d);
 
   Future<void> stop() async {
-    await player.stop();
+    if (_handler != null) {
+      await _handler.dismiss(); // detiene y quita la notificación
+    } else {
+      await player.stop();
+    }
     current = null;
     queue = const [];
     queueIndex = -1;

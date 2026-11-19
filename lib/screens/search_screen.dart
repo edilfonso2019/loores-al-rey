@@ -149,14 +149,18 @@ class _SearchScreenState extends State<SearchScreen> {
                     children: [
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                        padding: const EdgeInsets.fromLTRB(
+                          Space.gutter,
+                          Space.xs,
+                          Space.gutter,
+                          Space.xxs,
+                        ),
                         child: Text(
                           _results.length == 1
                               ? '1 himno'
                               : '${_results.length} himnos',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.copyWith(color: Brand.gris),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Brand.textoSecundario(context)),
                         ),
                       ),
                       Expanded(
@@ -175,11 +179,9 @@ class _SearchScreenState extends State<SearchScreen> {
                               return InkWell(
                                 onTap: () => _open(h),
                                 child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    8,
-                                    6,
-                                    8,
-                                    6,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: Space.gutter,
+                                    vertical: Space.xs,
                                   ),
                                   child: Column(
                                     crossAxisAlignment:
@@ -192,7 +194,10 @@ class _SearchScreenState extends State<SearchScreen> {
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
-                                            ?.copyWith(fontSize: 17),
+                                            ?.copyWith(
+                                              fontSize: FontSizes.body,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                       ),
                                       const SizedBox(height: 2),
                                       HighlightText(
@@ -202,7 +207,13 @@ class _SearchScreenState extends State<SearchScreen> {
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodySmall
-                                            ?.copyWith(fontSize: 12.5),
+                                            ?.copyWith(
+                                              fontSize: FontSizes.caption,
+                                              color: Brand.textoSecundario(
+                                                context,
+                                              ),
+                                              height: 1.35,
+                                            ),
                                       ),
                                     ],
                                   ),
@@ -260,7 +271,12 @@ class _Header extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+          padding: const EdgeInsets.fromLTRB(
+            Space.gutter,
+            Space.s,
+            Space.gutter,
+            Space.xs,
+          ),
           child: Column(
             children: [
               // Campo "Número o texto"
@@ -273,7 +289,7 @@ class _Header extends StatelessWidget {
                 child: Row(
                   children: [
                     const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 14),
+                      padding: EdgeInsets.symmetric(horizontal: Space.s),
                       child: Icon(
                         Icons.search,
                         color: Colors.black87,
@@ -336,8 +352,9 @@ class _Header extends StatelessWidget {
               const SizedBox(height: 10),
               // Temática
               Container(
-                height: 36,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
+                // 44 px: área táctil cómoda sin perder el aspecto de "píldora".
+                height: 44,
+                padding: const EdgeInsets.symmetric(horizontal: Space.m),
                 decoration: BoxDecoration(
                   color: const Color(0xFFD0D3DA),
                   borderRadius: BorderRadius.circular(18),
@@ -399,28 +416,42 @@ class _Header extends StatelessWidget {
     );
   }
 
+  /// Radio + texto tocables como una sola zona de 48 px (ley de Fitts):
+  /// antes solo respondía el círculo.
   Widget _radio(String? value, String label, bool enabled) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Radio<String?>(
-          value: value,
-          enabled: enabled,
-          fillColor: WidgetStateProperty.resolveWith(
-            (s) => s.contains(WidgetState.disabled)
-                ? Colors.white38
-                : Colors.white,
+    return InkWell(
+      borderRadius: BorderRadius.circular(Space.l),
+      onTap: enabled ? () => onBook(value) : null,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: Space.touch),
+        child: Padding(
+          padding: const EdgeInsets.only(right: Space.xs),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Radio<String?>(
+                value: value,
+                enabled: enabled,
+                // El área táctil de 48 px la da la fila completa (InkWell).
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+                fillColor: WidgetStateProperty.resolveWith(
+                  (s) => s.contains(WidgetState.disabled)
+                      ? Colors.white38
+                      : Colors.white,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  color: enabled ? Colors.white : Colors.white60,
+                  fontSize: FontSizes.small,
+                ),
+              ),
+            ],
           ),
-          visualDensity: VisualDensity.compact,
         ),
-        Text(
-          label,
-          style: TextStyle(
-            color: enabled ? Colors.white : Colors.white54,
-            fontSize: 14,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

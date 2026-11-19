@@ -15,6 +15,42 @@ class Brand {
 
   static const fuente = 'NotoSans';
   static const fuenteLogo = 'GreatVibes';
+
+  /// Gris para TEXTO secundario. [gris] (#7E7E82) solo da 3,6:1 sobre el
+  /// fondo y no cumple WCAG AA (4,5:1); este da 5,9:1 en claro y 7:1 en
+  /// oscuro. [gris] queda para íconos decorativos (3:1 basta).
+  static Color textoSecundario(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFFA9ADB8)
+      : const Color(0xFF5C5C60);
+}
+
+/// Espaciado en cuadrícula de 4/8 px. Toda la app usa estos valores para
+/// que márgenes y separaciones sean consistentes.
+class Space {
+  static const double xxs = 4;
+  static const double xs = 8;
+  static const double s = 12;
+  static const double m = 16;
+  static const double l = 24;
+  static const double xl = 32;
+
+  /// Margen lateral de todas las pantallas.
+  static const double gutter = m;
+
+  /// Margen lateral de la letra (lectura cómoda, ~45-70 caracteres por línea).
+  static const double reading = l;
+
+  /// Área táctil mínima (Material / WCAG 2.5.5).
+  static const double touch = 48;
+}
+
+/// Escala tipográfica (sp). Nada por debajo de [caption].
+class FontSizes {
+  static const double caption = 12;
+  static const double small = 14;
+  static const double body = 16;
+  static const double title = 18;
 }
 
 /// Fondos elegibles para la letra ("Color de fondo" en Configuración).

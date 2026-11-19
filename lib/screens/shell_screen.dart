@@ -101,7 +101,7 @@ class _BottomBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 68,
+          height: 72,
           child: Row(
             children: [
               for (var i = 0; i < _items.length; i++)
@@ -112,21 +112,37 @@ class _BottomBar extends StatelessWidget {
                       label: _items[i].$2,
                       selected: i == index,
                       button: true,
+                      excludeSemantics: true, // la etiqueta ya la da "label"
+                      // Ícono + etiqueta: los íconos solos se reconocen peor
+                      // (sobre todo para personas mayores).
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             _items[i].$1,
-                            size: 28,
+                            size: 26,
                             color: i == index
                                 ? (dark ? Brand.azulClaro : Brand.azul)
                                 : fg,
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: Space.xxs / 2),
+                          Text(
+                            _items[i].$2,
+                            style: TextStyle(
+                              fontSize: FontSizes.caption,
+                              fontWeight: i == index
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: i == index
+                                  ? (dark ? Brand.azulClaro : Brand.azul)
+                                  : fg,
+                            ),
+                          ),
+                          const SizedBox(height: Space.xxs),
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
                             width: i == index ? 14 : 0,
-                            height: 4,
+                            height: 3,
                             decoration: BoxDecoration(
                               color: dark ? Brand.azulClaro : Brand.azul,
                               borderRadius: BorderRadius.circular(2),

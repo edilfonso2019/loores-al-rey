@@ -79,7 +79,10 @@ class _FavoritesTab extends StatelessWidget {
           key: ValueKey(h.id),
           leading: const Icon(Icons.description, color: Brand.azul, size: 30),
           title: Text('#${h.number} - ${h.title}'),
-          subtitle: Text(hymnalName(h), style: const TextStyle(fontSize: 11)),
+          subtitle: Text(
+            hymnalName(h),
+            style: const TextStyle(fontSize: FontSizes.caption),
+          ),
           onTap: () => _open(ctx, h),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -132,7 +135,10 @@ class _HistoryTab extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.history),
             title: Text('#${h.number} - ${h.title}'),
-            subtitle: Text(hymnalName(h), style: const TextStyle(fontSize: 11)),
+            subtitle: Text(
+              hymnalName(h),
+              style: const TextStyle(fontSize: FontSizes.caption),
+            ),
             onTap: () => _open(context, h),
           ),
         TextButton(
@@ -319,7 +325,7 @@ class PlaylistScreen extends StatelessWidget {
                         ? null
                         : Text(
                             hymnalName(h),
-                            style: const TextStyle(fontSize: 11),
+                            style: const TextStyle(fontSize: FontSizes.caption),
                           ),
                     onTap: h == null
                         ? null
@@ -357,7 +363,7 @@ class _Empty extends StatelessWidget {
           Text(
             text,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Brand.gris),
+            style: TextStyle(color: Brand.textoSecundario(context)),
           ),
         ],
       ),

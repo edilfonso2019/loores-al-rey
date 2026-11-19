@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:just_audio_background/just_audio_background.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:provider/provider.dart';
 
 import 'data/hymn_repository.dart';
 import 'screens/shell_screen.dart';
 import 'services/app_state.dart';
+import 'services/audio_handler.dart';
 import 'services/backup_service.dart';
 import 'services/media_service.dart';
 import 'services/player_service.dart';
@@ -17,17 +18,21 @@ Future<void> main() async {
   // De borde a borde: la barra inferior de la app se extiende detrás de los
   // botones del sistema en lugar de dejar una franja gris.
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  HymnAudioHandler? audioHandler;
   try {
-    await JustAudioBackground.init(
-      androidNotificationChannelId: 'pe.looresalrey.app.audio',
-      androidNotificationChannelName: 'Reproducción de himnos',
-      androidNotificationOngoing: true,
-      notificationColor: Brand.azul,
-      androidNotificationIcon: 'drawable/ic_notificacion',
+    audioHandler = await AudioService.init(
+      builder: HymnAudioHandler.new,
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'pe.looresalrey.app.audio',
+        androidNotificationChannelName: 'Reproducción de himnos',
+        androidNotificationOngoing: true,
+        androidNotificationIcon: 'drawable/ic_notificacion',
+        notificationColor: Brand.azul,
+      ),
     );
   } catch (e) {
     // Sin controles en la notificación, pero la app sigue funcionando.
-    debugPrint('JustAudioBackground no disponible: $e');
+    debugPrint('AudioService no disponible: $e');
   }
   final state = AppState();
   final media = MediaService();
@@ -41,7 +46,9 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider.value(value: state),
         ChangeNotifierProvider.value(value: media),
-        ChangeNotifierProvider(create: (_) => PlayerService(media, state)),
+        ChangeNotifierProvider(
+          create: (_) => PlayerService(media, state, audioHandler),
+        ),
         Provider(create: (_) => BackupService(state)),
         ChangeNotifierProvider(create: (_) => NavController()),
       ],

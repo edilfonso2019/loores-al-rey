@@ -16,9 +16,24 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.watch<AppState>();
+    // Encabezado de sección: más aire arriba que abajo (ley de proximidad:
+    // el título se agrupa con su sección, no con la anterior).
     Widget header(String t) => Padding(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 4),
-      child: Text(t, style: const TextStyle(fontSize: 12, letterSpacing: .5)),
+      padding: const EdgeInsets.fromLTRB(
+        Space.gutter,
+        Space.l,
+        Space.gutter,
+        Space.xs,
+      ),
+      child: Text(
+        t,
+        style: TextStyle(
+          fontSize: FontSizes.caption,
+          fontWeight: FontWeight.w700,
+          letterSpacing: .5,
+          color: Brand.textoSecundario(context),
+        ),
+      ),
     );
     return Scaffold(
       appBar: AppBar(

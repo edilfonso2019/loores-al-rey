@@ -189,7 +189,11 @@ class _HymnScreenState extends State<HymnScreen> {
                     ),
                   ),
           ),
-          Positioned(left: 16, bottom: 12, child: _FavoriteButton(id: h.id)),
+          Positioned(
+            left: Space.m,
+            bottom: Space.m,
+            child: _FavoriteButton(id: h.id),
+          ),
         ],
       ),
       bottomNavigationBar: basic
@@ -232,7 +236,13 @@ class _Lyrics extends StatelessWidget {
     final cat = HymnRepository.instance.categoryName(hymn);
     return SelectionArea(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(22, 16, 22, 96),
+        // Abajo deja espacio para el botón de favorito (48 + márgenes).
+        padding: const EdgeInsets.fromLTRB(
+          Space.reading,
+          Space.m,
+          Space.reading,
+          88,
+        ),
         children: [
           Text(
             hymn.title,
@@ -259,7 +269,7 @@ class _Lyrics extends StatelessWidget {
             // para no alargar la pantalla (en proyección sí se repite).
             if (v.isChorus && i > 1)
               Padding(
-                padding: const EdgeInsets.only(left: 18),
+                padding: const EdgeInsets.only(left: Space.m),
                 child: Row(
                   children: [
                     Icon(
@@ -280,7 +290,7 @@ class _Lyrics extends StatelessWidget {
               )
             else if (v.isChorus)
               Padding(
-                padding: const EdgeInsets.only(left: 18),
+                padding: const EdgeInsets.only(left: Space.m),
                 child: Text.rich(
                   TextSpan(
                     children: [
@@ -383,17 +393,26 @@ class _PlayerBar extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final isAudio = kind.isAudio;
     final active = isAudio && player.isCurrent(hymn, kind);
-    final subtitle = hymn.autor ?? 'Autor no disponible';
-    final tono = hymn.tono ?? 'Tono no disponible';
+    // Si faltan ambos datos se dice una sola vez (menos ruido visual).
+    final String subtitle;
+    final String? tono;
+    if (hymn.autor == null && hymn.tono == null) {
+      subtitle = 'Autor y tono no disponibles';
+      tono = null;
+    } else {
+      subtitle = hymn.autor ?? 'Autor no disponible';
+      tono = hymn.tono ?? 'Tono no disponible';
+    }
     // Si el servidor no tiene el recurso, se avisa sin esperar a que toquen play.
     media.prefetchAvailability(hymn, kind);
     final missing = media.availability(hymn, kind) == false;
     final error = missing
         ? MediaService.notAvailableMessage(hymn, kind)
         : (active ? player.error : null);
+    final secondary = Brand.textoSecundario(context);
     return Container(
-      margin: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-      padding: const EdgeInsets.all(6),
+      margin: const EdgeInsets.fromLTRB(Space.s, Space.xs, Space.s, Space.xs),
+      padding: const EdgeInsets.all(Space.xxs),
       decoration: BoxDecoration(
         color: dark ? const Color(0xFF1F2A44) : const Color(0xFFDADADA),
         borderRadius: BorderRadius.circular(30),
@@ -415,12 +434,12 @@ class _PlayerBar extends StatelessWidget {
               height: 48,
               child: Icon(Icons.picture_as_pdf_rounded, color: Brand.azul),
             ),
-          const SizedBox(width: 8),
+          const SizedBox(width: Space.xs),
           Expanded(
             child: active && error == null
                 ? _Progress(player: player, subtitle: subtitle, tono: tono)
                 : Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: Space.xxs),
                     child: Row(
                       children: [
                         Expanded(
@@ -429,29 +448,31 @@ class _PlayerBar extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: FontSizes.caption,
                               color: missing
-                                  ? Brand.gris
+                                  ? secondary
                                   : (error != null
                                         ? Theme.of(context).colorScheme.error
-                                        : Brand.gris),
+                                        : secondary),
                               fontStyle: missing ? FontStyle.italic : null,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          tono,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Brand.gris,
+                        if (tono != null) ...[
+                          const SizedBox(width: Space.xs),
+                          Text(
+                            tono,
+                            style: TextStyle(
+                              fontSize: FontSizes.caption,
+                              color: secondary,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: Space.xs),
           _DownloadButton(
             hymn: hymn,
             kind: kind,
@@ -473,6 +494,8 @@ class _Progress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = player.player;
+    final secondary = Brand.textoSecundario(context);
+    const caption = TextStyle(fontSize: FontSizes.caption);
     return StreamBuilder<Duration>(
       stream: p.positionStream,
       builder: (context, snap) {
@@ -503,29 +526,29 @@ class _Progress extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: Space.xs),
               child: Row(
                 children: [
-                  Text(
-                    formatDuration(pos),
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  const SizedBox(width: 6),
+                  Text(formatDuration(pos), style: caption),
+                  const SizedBox(width: Space.xs),
                   Expanded(
                     child: Text(
                       subtitle,
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, color: Brand.gris),
+                      style: caption.copyWith(color: secondary),
                     ),
                   ),
                   if (tono != null)
-                    Text('$tono  ', style: const TextStyle(fontSize: 11)),
-                  Text(
-                    formatDuration(total),
-                    style: const TextStyle(fontSize: 11),
-                  ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: Space.xs),
+                      child: Text(
+                        tono!,
+                        style: caption.copyWith(color: secondary),
+                      ),
+                    ),
+                  Text(formatDuration(total), style: caption),
                 ],
               ),
             ),
@@ -557,7 +580,7 @@ class _DownloadButton extends StatelessWidget {
         width: 48,
         height: 48,
         child: Padding(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(Space.s),
           child: CircularProgressIndicator(
             value: progress == 0 ? null : progress,
             strokeWidth: 3,
@@ -632,7 +655,7 @@ class _RoundButton extends StatelessWidget {
         shape: const CircleBorder(),
         child: busy
             ? const Padding(
-                padding: EdgeInsets.all(13),
+                padding: EdgeInsets.all(Space.s),
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
                   color: Colors.white,
@@ -681,8 +704,8 @@ class _KindTabs extends StatelessWidget {
                   child: InkWell(
                     onTap: () => onChanged(k),
                     child: Container(
-                      height: 40,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      height: Space.touch,
+                      padding: const EdgeInsets.symmetric(horizontal: Space.m),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: k == kind

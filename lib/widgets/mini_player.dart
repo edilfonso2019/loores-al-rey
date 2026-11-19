@@ -25,7 +25,13 @@ class MiniPlayer extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 6, 4, 6),
+          // Alineado con el margen lateral de la app.
+          padding: const EdgeInsets.fromLTRB(
+            Space.gutter,
+            Space.xxs,
+            Space.xxs,
+            Space.xxs,
+          ),
           child: Row(
             children: [
               const Icon(Icons.music_note_rounded, color: Brand.azulClaro),

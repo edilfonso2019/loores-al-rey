@@ -152,7 +152,10 @@ class _HymnalButton extends StatelessWidget {
               top: -10,
               right: -8,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Space.xs,
+                  vertical: Space.xxs,
+                ),
                 decoration: BoxDecoration(
                   color: Brand.dorado,
                   borderRadius: BorderRadius.circular(10),
@@ -161,7 +164,7 @@ class _HymnalButton extends StatelessWidget {
                   'Próximamente',
                   style: TextStyle(
                     color: Brand.azul,
-                    fontSize: 11,
+                    fontSize: FontSizes.caption,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
