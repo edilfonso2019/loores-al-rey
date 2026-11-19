@@ -41,7 +41,7 @@ class _HymnScreenState extends State<HymnScreen> {
   @override
   void dispose() {
     // Sin "modo minimizado" la música no sigue fuera del himno.
-    if (!_state.minimizedMode && _player.current != null) {
+    if (!_state.minimizedMode && _player.current != null && !_player.hasQueue) {
       _player.stop();
     }
     super.dispose();
@@ -56,8 +56,10 @@ class _HymnScreenState extends State<HymnScreen> {
   void _share() {
     final h = _hymn;
     final buf = StringBuffer('${h.number}. ${h.title}\n${hymnalName(h)}\n\n');
-    for (final v in h.verses) {
-      buf.writeln(v.isChorus ? 'Coro:\n${v.text}\n' : '${v.number}. ${v.text}\n');
+    for (var i = 0; i < h.estrofas.length; i++) {
+      buf.writeln('${i + 1}. ${h.estrofas[i]}\n');
+      // El coro se escribe una sola vez, después de la primera estrofa.
+      if (i == 0 && h.hasChorus) buf.writeln('Coro:\n${h.coro}\n');
     }
     if (h.cita != null) buf.writeln('${h.versiculo ?? ''} ${h.cita}'.trim());
     buf.write('\n— App Loores al Rey');
@@ -258,7 +260,12 @@ class _PlayerBar extends StatelessWidget {
     final active = isAudio && player.isCurrent(hymn, kind);
     final subtitle = hymn.autor ?? 'Autor no disponible';
     final tono = hymn.tono ?? 'Tono no disponible';
-    final error = active ? player.error : null;
+    // Si el servidor no tiene el recurso, se avisa sin esperar a que toquen play.
+    media.prefetchAvailability(hymn, kind);
+    final missing = media.availability(hymn, kind) == false;
+    final error = missing
+        ? MediaService.notAvailableMessage(hymn, kind)
+        : (active ? player.error : null);
     return Container(
       margin: const EdgeInsets.fromLTRB(8, 6, 8, 6),
       padding: const EdgeInsets.all(6),
@@ -273,7 +280,7 @@ class _PlayerBar extends StatelessWidget {
               tooltip: active && player.playing ? 'Pausar' : 'Reproducir',
               icon: active && player.playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
               busy: active && player.loading,
-              onPressed: () => player.play(hymn, kind),
+              onPressed: missing ? null : () => player.play(hymn, kind),
             )
           else
             const SizedBox(width: 48, height: 48, child: Icon(Icons.picture_as_pdf_rounded, color: Brand.azul)),
@@ -292,18 +299,21 @@ class _PlayerBar extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 12,
-                              color: error != null ? Theme.of(context).colorScheme.error : Brand.gris,
+                              color: missing
+                                  ? Brand.gris
+                                  : (error != null ? Theme.of(context).colorScheme.error : Brand.gris),
+                              fontStyle: missing ? FontStyle.italic : null,
                             ),
                           ),
                         ),
                         const SizedBox(width: 6),
-                          Text(tono, style: const TextStyle(fontSize: 11, color: Brand.gris)),
+                        Text(tono, style: const TextStyle(fontSize: 11, color: Brand.gris)),
                       ],
                     ),
                   ),
           ),
           const SizedBox(width: 8),
-          _DownloadButton(hymn: hymn, kind: kind, media: media),
+          _DownloadButton(hymn: hymn, kind: kind, media: media, enabled: !missing),
         ],
       ),
     );
@@ -372,10 +382,11 @@ class _Progress extends StatelessWidget {
 }
 
 class _DownloadButton extends StatelessWidget {
-  const _DownloadButton({required this.hymn, required this.kind, required this.media});
+  const _DownloadButton({required this.hymn, required this.kind, required this.media, this.enabled = true});
   final Hymn hymn;
   final MediaKind kind;
   final MediaService media;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -395,7 +406,7 @@ class _DownloadButton extends StatelessWidget {
       tooltip: downloaded ? 'Descargado (quitar)' : 'Descargar ${kind.label.toLowerCase()}',
       icon: downloaded ? Icons.download_done_rounded : Icons.download_rounded,
       filled: !downloaded,
-      onPressed: () async {
+      onPressed: !enabled ? null : () async {
         if (downloaded) {
           final ok = await confirm(context, 'Quitar descarga',
               '¿Borrar ${kind.label.toLowerCase()} del himno ${hymn.number} del teléfono?', ok: 'Borrar');
@@ -424,7 +435,7 @@ class _RoundButton extends StatelessWidget {
     this.filled = true,
   });
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final String tooltip;
   final bool busy;
   final bool filled;
@@ -435,7 +446,9 @@ class _RoundButton extends StatelessWidget {
       width: 48,
       height: 48,
       child: Material(
-        color: filled ? Brand.azul : Colors.transparent,
+        color: !filled
+            ? Colors.transparent
+            : (onPressed == null ? Brand.gris.withValues(alpha: 0.5) : Brand.azul),
         shape: const CircleBorder(),
         child: busy
             ? const Padding(

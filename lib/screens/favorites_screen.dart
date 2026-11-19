@@ -9,6 +9,7 @@ import '../services/app_state.dart';
 import '../services/player_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/mini_player.dart';
 import 'hymn_screen.dart';
 import 'shell_screen.dart';
 
@@ -60,7 +61,7 @@ class _FavoritesTab extends StatelessWidget {
     }
     return ReorderableListView.builder(
       itemCount: items.length,
-      onReorder: state.reorderFavorites,
+      onReorderItem: state.reorderFavorites,
       itemBuilder: (ctx, i) {
         final h = items[i];
         return ListTile(
@@ -179,7 +180,10 @@ class PlaylistScreen extends StatelessWidget {
     if (pl == null) return const Scaffold(body: SizedBox.shrink());
     final repo = HymnRepository.instance;
     final hymns = [for (final id in pl.items) repo.byId(id)];
+    final player = context.watch<PlayerService>();
+    final playingHere = player.queueName == pl.name && player.hasQueue ? player.queueIndex : -1;
     return Scaffold(
+      bottomNavigationBar: const SafeArea(top: false, child: MiniPlayer()),
       appBar: AppBar(
         title: Text(pl.name),
         actions: [
@@ -221,7 +225,7 @@ class PlaylistScreen extends StatelessWidget {
           : ReorderableListView.builder(
               padding: const EdgeInsets.only(bottom: 88),
               itemCount: pl.items.length,
-              onReorder: (a, b) => state.reorderPlaylist(pl, a, b),
+              onReorderItem: (a, b) => state.reorderPlaylist(pl, a, b),
               itemBuilder: (ctx, i) {
                 final h = hymns[i];
                 return Dismissible(
@@ -235,10 +239,13 @@ class PlaylistScreen extends StatelessWidget {
                   ),
                   onDismissed: (_) => state.removeFromPlaylist(pl, i),
                   child: ListTile(
+                    selected: i == playingHere,
                     leading: CircleAvatar(
-                      backgroundColor: Brand.azul,
-                      foregroundColor: Colors.white,
-                      child: Text('${i + 1}'),
+                      backgroundColor: i == playingHere ? Brand.dorado : Brand.azul,
+                      foregroundColor: i == playingHere ? Brand.azul : Colors.white,
+                      child: i == playingHere
+                          ? const Icon(Icons.volume_up_rounded, size: 20)
+                          : Text('${i + 1}'),
                     ),
                     title: Text(h == null ? pl.items[i] : '#${h.number} - ${h.title}'),
                     subtitle: h == null ? null : Text(hymnalName(h), style: const TextStyle(fontSize: 11)),

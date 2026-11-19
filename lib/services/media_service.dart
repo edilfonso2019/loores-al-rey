@@ -111,10 +111,70 @@ class MediaService extends ChangeNotifier {
     return url == null ? null : Uri.parse(url);
   }
 
+  /// Mensaje para recursos que el servidor aún no tiene (404).
+  static String notAvailableMessage(Hymn h, MediaKind k) => switch (k) {
+        MediaKind.cantado => 'Pista cantada aún no disponible.',
+        MediaKind.instrumental => 'Pista instrumental aún no disponible.',
+        MediaKind.partitura => 'Partitura aún no disponible.',
+      };
+
+  /// true = existe, false = el servidor no la tiene (404), null = sin
+  /// comprobar o sin conexión.
+  final Map<String, bool> _available = {};
+  final Map<String, Future<bool?>> _checking = {};
+
+  bool? availability(Hymn h, MediaKind k) =>
+      isDownloaded(h, k) ? true : _available[key(h, k)];
+
+  /// Consulta al servidor (HEAD) si el recurso existe. Cachea la respuesta.
+  Future<bool?> checkAvailable(Hymn h, MediaKind k) {
+    final id = key(h, k);
+    if (isDownloaded(h, k)) return Future.value(true);
+    if (_available.containsKey(id)) return Future.value(_available[id]);
+    return _checking[id] ??= () async {
+      try {
+        final url = remoteUrl(h, k);
+        if (url == null) {
+          _available[id] = false;
+          return false;
+        }
+        final res = await _client.head(Uri.parse(url)).timeout(const Duration(seconds: 10));
+        if (res.statusCode == 200) _available[id] = true;
+        if (res.statusCode == 404) _available[id] = false;
+        return _available[id];
+      } catch (_) {
+        return null; // Sin conexión: no se cachea.
+      } finally {
+        _checking.remove(id);
+        notifyListeners();
+      }
+    }();
+  }
+
+  final Set<String> _prefetched = {};
+
+  /// Comprueba la disponibilidad una sola vez por sesión (para la UI).
+  void prefetchAvailability(Hymn h, MediaKind k) {
+    final id = key(h, k);
+    if (isDownloaded(h, k) || _available.containsKey(id) || !_prefetched.add(id)) return;
+    Future.microtask(() => checkAvailable(h, k));
+  }
+
+  final Map<String, Future<File>> _inflight = {};
+
   /// Descarga un recurso. Lanza [MediaNotAvailable] si no existe.
-  Future<File> download(Hymn h, MediaKind k) async {
+  /// Si ya se está descargando, devuelve la misma descarga.
+  Future<File> download(Hymn h, MediaKind k) {
     final existing = localFile(h, k);
-    if (existing != null) return existing;
+    if (existing != null) return Future.value(existing);
+    final id = key(h, k);
+    // Ojo: el callback no debe devolver el Future (se esperaría a sí mismo).
+    return _inflight[id] ??= _download(h, k).whenComplete(() {
+      _inflight.remove(id);
+    });
+  }
+
+  Future<File> _download(Hymn h, MediaKind k) async {
     final url = remoteUrl(h, k);
     if (url == null) {
       throw const MediaNotAvailable('Este himnario aún no tiene material en el servidor.');
@@ -125,9 +185,12 @@ class MediaService extends ChangeNotifier {
     progress[id] = 0;
     notifyListeners();
     try {
-      final res = await _client.send(http.Request('GET', Uri.parse(url)));
+      final res = await _client
+          .send(http.Request('GET', Uri.parse(url)))
+          .timeout(const Duration(seconds: 20));
       if (res.statusCode == 404) {
-        throw MediaNotAvailable('${k.label} del himno ${h.number} aún no disponible.');
+        _available[id] = false;
+        throw MediaNotAvailable(notAvailableMessage(h, k));
       }
       if (res.statusCode != 200) {
         throw HttpException('Error del servidor (${res.statusCode}).');
@@ -138,7 +201,8 @@ class MediaService extends ChangeNotifier {
       var received = 0;
       var lastNotify = DateTime.now();
       try {
-        await for (final chunk in res.stream) {
+        // Si el servidor deja de enviar datos 30 s, se corta.
+        await for (final chunk in res.stream.timeout(const Duration(seconds: 30))) {
           sink.add(chunk);
           received += chunk.length;
           if (total > 0 &&
@@ -156,6 +220,7 @@ class MediaService extends ChangeNotifier {
       }
       await tmp.rename(file.path);
       _downloaded.add(id);
+      _available[id] = true;
       return file;
     } catch (_) {
       if (await tmp.exists()) await tmp.delete();
@@ -201,16 +266,22 @@ class MediaService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Motivo por el que se detuvo la última descarga en lote (o null).
+  String? bulkError;
+
   /// Descarga en lote (ej. todos los instrumentales). Omite los que no
-  /// existen en el servidor. Devuelve cuántos se descargaron.
+  /// existen en el servidor y se detiene si se pierde la conexión.
+  /// Devuelve cuántos se descargaron.
   Future<int> downloadAll(List<Hymn> hymns, MediaKind kind) async {
     if (bulkRunning) return 0;
     bulkRunning = true;
+    bulkError = null;
     _bulkCancel = false;
     final pending = hymns.where((h) => !isDownloaded(h, kind)).toList();
     bulkTotal = pending.length;
     bulkDone = 0;
     var ok = 0;
+    var failures = 0;
     notifyListeners();
     try {
       for (final h in pending) {
@@ -218,10 +289,24 @@ class MediaService extends ChangeNotifier {
         try {
           await download(h, kind);
           ok++;
+          failures = 0;
         } on MediaNotAvailable {
-          // Sigue con el próximo.
+          // No existe en el servidor: sigue con el próximo.
         } on SocketException {
-          break; // Sin conexión: detener.
+          bulkError = 'Se perdió la conexión.';
+          break;
+        } on http.ClientException {
+          bulkError = 'Se perdió la conexión.';
+          break;
+        } on TimeoutException {
+          bulkError = 'El servidor no responde.';
+          break;
+        } catch (_) {
+          // Error puntual del servidor: se omite, salvo que se repita mucho.
+          if (++failures >= 5) {
+            bulkError = 'El servidor está fallando. Inténtalo más tarde.';
+            break;
+          }
         }
         bulkDone++;
         notifyListeners();

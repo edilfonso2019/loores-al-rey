@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../services/app_state.dart';
 import '../services/player_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/mini_player.dart';
@@ -45,8 +44,9 @@ class ShellScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final nav = context.watch<NavController>();
-    final showMini = context.select<AppState, bool>((s) => s.minimizedMode) &&
-        context.select<PlayerService, bool>((p) => p.current != null);
+    // El mini reproductor aparece siempre que haya algo cargado, para no
+    // dejar música sonando sin controles (Inicio lo muestra por su cuenta).
+    final showMini = context.select<PlayerService, bool>((p) => p.current != null);
     return PopScope(
       canPop: nav.index == 0,
       onPopInvokedWithResult: (didPop, _) {

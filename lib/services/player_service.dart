@@ -63,6 +63,13 @@ class PlayerService extends ChangeNotifier {
       if (uri == null) {
         throw const MediaNotAvailable('Este himnario aún no tiene pistas.');
       }
+      if (!_media.isDownloaded(h, k)) {
+        final ok = await _media.checkAvailable(h, k);
+        if (ok == false) throw MediaNotAvailable(MediaService.notAvailableMessage(h, k));
+        if (ok == null) throw const MediaNotAvailable('Sin conexión. Descarga la pista para escucharla sin internet.');
+      }
+      // Si mientras se consultaba el usuario eligió otro himno, no sigas.
+      if (!isCurrent(h, k)) return;
       final hymnal = HymnRepository.instance.hymnal(h.book);
       await player.setAudioSource(AudioSource.uri(
         uri,
@@ -81,7 +88,7 @@ class PlayerService extends ChangeNotifier {
     } catch (_) {
       _fail(_media.isDownloaded(h, k)
           ? 'No se pudo abrir el archivo descargado.'
-          : '${k.label} del himno ${h.number} no disponible o sin conexión.');
+          : 'No se pudo reproducir. Revisa tu conexión.');
     }
   }
 

@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../services/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
-import '../widgets/mini_player.dart';
 import 'backup_screen.dart';
 import 'downloads_screen.dart';
 import 'shell_screen.dart';
@@ -31,10 +30,7 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
+      body: ListView(
               children: [
                 header('CONFIGURACIÓN GLOBAL:'),
                 ListTile(
@@ -87,7 +83,7 @@ class SettingsScreen extends StatelessWidget {
                 SwitchListTile(
                   secondary: const Icon(Icons.minimize),
                   title: const Text('Modo minimizado'),
-                  subtitle: const Text('Mini reproductor en toda la app'),
+                  subtitle: const Text('La música sigue al salir del himno'),
                   value: s.minimizedMode,
                   onChanged: s.setMinimizedMode,
                 ),
@@ -109,10 +105,6 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-          if (s.minimizedMode) const MiniPlayer(),
-        ],
-      ),
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../models/hymn.dart';
+import '../theme/app_theme.dart';
 
 /// Modo proyección: pantalla completa, fondo oscuro, una estrofa a la vez.
 /// Pensado para TV / proyector (toca o desliza para avanzar).
@@ -50,7 +51,7 @@ class _ProjectionScreenState extends State<ProjectionScreen> {
   Widget build(BuildContext context) {
     final hymn = widget.hymn;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Brand.azul,
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapUp: (d) =>
@@ -96,7 +97,7 @@ class _ProjectionScreenState extends State<ProjectionScreen> {
                             v.text,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: v.isChorus ? const Color(0xFFFFD766) : Colors.white,
+                              color: v.isChorus ? Brand.dorado : Colors.white,
                               fontSize: 56,
                               height: 1.35,
                               fontWeight: FontWeight.w600,

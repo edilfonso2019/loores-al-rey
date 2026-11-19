@@ -1,27 +1,13 @@
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loores_al_rey/data/hymn_repository.dart';
 
-/// Lee assets directamente del disco (sin necesitar el bundle de Flutter).
-class _DiskBundle extends CachingAssetBundle {
-  @override
-  Future<ByteData> load(String key) async {
-    final bytes = await File(key).readAsBytes();
-    return ByteData.sublistView(bytes);
-  }
-
-  @override
-  Future<String> loadString(String key, {bool cache = true}) => File(key).readAsString(encoding: utf8);
-}
+import 'test_utils.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final repo = HymnRepository.instance;
 
-  setUpAll(() => repo.load(bundle: _DiskBundle()));
+  setUpAll(() => repo.load(bundle: DiskBundle()));
 
   test('carga Clásico (activo) y CG (próximamente)', () {
     expect(repo.hymnal('clasico')!.activo, isTrue);

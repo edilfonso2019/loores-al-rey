@@ -43,6 +43,11 @@ class DownloadsScreen extends StatelessWidget {
                   trailing: TextButton(onPressed: media.cancelBulk, child: const Text('Cancelar')),
                 )
               else ...[
+                if (media.bulkError != null)
+                  ListTile(
+                    leading: const Icon(Icons.error_outline, color: Colors.redAccent),
+                    title: Text('Descarga detenida: ${media.bulkError}'),
+                  ),
                 ListTile(
                   leading: const Icon(Icons.library_music),
                   title: const Text('Descargar todos los instrumentales'),

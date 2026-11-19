@@ -79,8 +79,8 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Mueve un favorito; [newIndex] es la posición final (ya ajustada).
   void reorderFavorites(int oldIndex, int newIndex) {
-    if (newIndex > oldIndex) newIndex--;
     favorites.insert(newIndex, favorites.removeAt(oldIndex));
     _prefs?.setStringList(_kFavorites, favorites);
     notifyListeners();
@@ -143,8 +143,8 @@ class AppState extends ChangeNotifier {
     _savePlaylists();
   }
 
+  /// Mueve un himno de la lista; [newIndex] es la posición final.
   void reorderPlaylist(Playlist pl, int oldIndex, int newIndex) {
-    if (newIndex > oldIndex) newIndex--;
     pl.items.insert(newIndex, pl.items.removeAt(oldIndex));
     _savePlaylists();
   }
