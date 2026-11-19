@@ -23,6 +23,7 @@ Future<void> main() async {
       androidNotificationChannelName: 'Reproducción de himnos',
       androidNotificationOngoing: true,
       notificationColor: Brand.azul,
+      androidNotificationIcon: 'drawable/ic_notificacion',
     );
   } catch (e) {
     // Sin controles en la notificación, pero la app sigue funcionando.
