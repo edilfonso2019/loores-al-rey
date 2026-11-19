@@ -63,7 +63,9 @@ class BackupService {
   Future<drive.DriveApi> _driveApi() async {
     final signIn = GoogleSignIn.instance;
     if (!_signInReady) {
-      await signIn.initialize();
+      await signIn.initialize(
+        serverClientId: kGoogleServerClientId.isEmpty ? null : kGoogleServerClientId,
+      );
       _signInReady = true;
     }
     final client = signIn.authorizationClient;

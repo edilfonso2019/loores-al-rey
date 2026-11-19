@@ -2,10 +2,14 @@
 
 App **Android** (primero) de himnario para la **Iglesia Adventista del Séptimo Día Movimiento de Reforma (IASDMR)**, hecha en **Flutter**. Todo en español. Responder al usuario en español, concreto y breve.
 
-## Estado actual
-- Hay un esqueleto Flutter en `lib/` escrito sin compilar (en la nube no había SDK). Puede tener errores: corrígelos.
-- `lib/` todavía usa el formato viejo de datos (`nuevo.json`/`antiguo.json`). Hay que adaptarlo a `clasico.json` / `cg.json` (ver abajo).
-- Aún no existen las carpetas `android/` ni `ios/`: créalas con `flutter create --org pe.looresalrey --project-name loores_al_rey --platforms android .` sin pisar `lib/`.
+## Estado actual (nov. 2026)
+- App v0.1 completa y compilando: Inicio, Buscador, Himno (audio, descarga, partitura), Favoritos/Listas/Recientes, Ajustes, Descargas, Respaldo, Proyección. 14 tests.
+- Entorno Windows: Flutter en `C:\src\flutter`, JDK 17 (Temurin), Android SDK en `C:\Android\Sdk`.
+  `kotlin.incremental=false` en `android/gradle.properties` porque el proyecto (D:) y la caché de pub (C:) están en discos distintos.
+- No hay Visual Studio: evitar paquetes con *native assets* (por eso `pdfx` y no `pdfrx`), o `flutter test` falla.
+- Keystore en `C:\Users\LENOVO\LooresAlRey-Keystore\` (fuera del repo); `android/key.properties` la referencia y está en .gitignore.
+- `package:flutter/material.dart` da avisos de deprecación (Flutter 3.50 sugiere `material_ui`); no migrar mientras pdfx/share_plus sigan usando material.dart.
+- Pendiente: probar en celular real, configurar Google Drive (`docs/GOOGLE_DRIVE.md`), autor/tonalidad en el JSON, pistas cantadas en el servidor.
 
 ## Himnarios (datos en `assets/data/`)
 - `clasico.json` — **Himnario Clásico "Loores al Rey"**, 791 himnos, 54 categorías (temáticas). `activo: true`.

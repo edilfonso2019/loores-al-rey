@@ -1,57 +1,75 @@
 # Loores al Rey 👑🎶
 
-Himnario Adventista del Séptimo Día para Android e iOS, hecho con **Flutter**.
-Himnario **nuevo (2010)** y **antiguo (1962)**, 100 % offline, sin anuncios.
+Himnario de la **Iglesia Adventista del Séptimo Día Movimiento de Reforma**
+para Android, hecho con **Flutter**. Sin anuncios.
 
 ## Funciones (v0.1)
 
-- Búsqueda por número, título o fragmento de letra (ignora tildes)
-- Favoritos e historial
-- Tamaño de letra ajustable (pellizco o ajustes), tema claro/oscuro
-- **Modo proyección**: pantalla completa, estrofa por estrofa, ideal para TV/proyector
-- Compartir letra por WhatsApp
+- **Himnario Clásico** completo (791 himnos, 54 temáticas) 100 % offline.
+  El **Himnario CG** aparece como "Próximamente" hasta que `cg.json` tenga `activo: true`.
+- Búsqueda por número, título o letra (sin tildes), filtro por temática y por himnario.
+- Pista **instrumental** y **cantada** por streaming o descargada (controles en la
+  notificación, "tocar continuamente"). Si el servidor aún no tiene una pista se
+  muestra "aún no disponible".
+- **Partituras** PDF con zoom (streaming o descarga). Administrador de descargas.
+- **Favoritos**, historial y **listas de culto** (ordenar, reproducir seguido,
+  compartir por WhatsApp).
+- **Respaldo** de favoritos, listas y ajustes: archivo JSON o Google Drive
+  (requiere configuración: [`docs/GOOGLE_DRIVE.md`](docs/GOOGLE_DRIVE.md)).
+- Tamaño de letra, color de fondo, tema claro/oscuro, modo básico y **modo proyección**.
 
-Roadmap, competencia y posicionamiento: [`docs/BENCHMARKING.md`](docs/BENCHMARKING.md).
+Roadmap y competencia: [`docs/BENCHMARKING.md`](docs/BENCHMARKING.md).
 
-## Empezar
+## Desarrollo
 
 ```bash
 flutter pub get
-flutter run
-```
-
-Pruebas y análisis:
-
-```bash
 flutter analyze && flutter test
+flutter run            # con un celular conectado (depuración USB)
 ```
 
-## Cargar los himnos
-
-Los archivos `assets/data/nuevo.json` y `assets/data/antiguo.json` traen solo ejemplos.
-Prepara un TXT por himnario (formato en `tools/import_hymns.py`) y ejecuta:
+APK firmado (requiere `android/key.properties`, que **no** se versiona):
 
 ```bash
-python3 tools/import_hymns.py nuevo   himnos_nuevo.txt   assets/data/nuevo.json
-python3 tools/import_hymns.py antiguo himnos_antiguo.txt assets/data/antiguo.json
+flutter build apk --release                    # universal
+flutter build apk --release --split-per-abi    # uno por arquitectura (más livianos)
 ```
+
+`android/key.properties`:
+
+```
+storePassword=...
+keyPassword=...
+keyAlias=loores
+storeFile=C:/Users/LENOVO/LooresAlRey-Keystore/loores-al-rey-release.jks
+```
+
+## Datos
+
+- `assets/data/clasico.json` y `assets/data/cg.json`:
+  `{id, nombre, activo, categorias, himnos:[{n, t, cat, estrofas, coro?, cita?, versiculo?, autor?, tono?}]}`.
+  `autor` y `tono` son opcionales; mientras no existan la app muestra "no disponible".
+- Servidor de pistas y partituras por himnario: `lib/config.dart` (o un bloque
+  `"servidor"` dentro del JSON del himnario).
+- `tools/import_hymns.py` es del formato anterior (nuevo/antiguo) y está pendiente de adaptar.
 
 ## Estructura
 
 ```
 lib/
-  models/      Hymn, Verse
-  data/        HymnRepository (carga + búsqueda)
-  services/    AppState (favoritos, historial, tema, fuente)
-  screens/     Home, Hymn, Projection, Settings
-  widgets/     HymnTile
-  theme/       Paleta azul + dorado
-assets/data/   JSON de himnarios
-tools/         Importador TXT → JSON
-docs/          Benchmarking y roadmap
+  config.dart  Servidor por himnario, Google Drive
+  models/      Hymnal, Hymn, Playlist
+  data/        HymnRepository (carga + búsqueda sin tildes)
+  services/    AppState, MediaService (URLs y descargas), PlayerService, BackupService
+  screens/     Inicio, Buscar, Himno, Favoritos/Listas, Ajustes, Descargas, Respaldo, Proyección
+  widgets/     Mini reproductor, visor de partitura, utilidades
+  theme/       Colores del brandbook IASDMR + Noto Sans
+assets/        Datos, fuentes, portada e ícono
+tools/         generar_icono.ps1, importador antiguo
+docs/          Brandbook, capturas del Figma, Google Drive, benchmarking
 ```
 
 ## Licencia del contenido
 
-El código es MIT. Las letras de los himnos pertenecen a sus autores y a la
-Asociación Publicadora; verifica los derechos antes de publicar en tiendas.
+El código es MIT. Las letras, pistas y partituras pertenecen a sus autores y
+titulares; verifica los derechos antes de publicar en tiendas.

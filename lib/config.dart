@@ -35,3 +35,7 @@ const Map<String, ServerConfig> kServidores = {
 
 /// Nombre del archivo de respaldo (local y en Google Drive, carpeta appData).
 const kNombreRespaldo = 'loores_al_rey_respaldo.json';
+
+/// ID de cliente OAuth **Web** de Google Cloud (no es secreto). Necesario para
+/// el respaldo en Google Drive; ver docs/GOOGLE_DRIVE.md. Vacío = sin configurar.
+const kGoogleServerClientId = '';
