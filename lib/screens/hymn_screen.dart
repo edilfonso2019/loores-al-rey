@@ -256,7 +256,8 @@ class _PlayerBar extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final isAudio = kind.isAudio;
     final active = isAudio && player.isCurrent(hymn, kind);
-    final subtitle = hymn.autor ?? (isAudio ? kind.label : 'Partitura');
+    final subtitle = hymn.autor ?? 'Autor no disponible';
+    final tono = hymn.tono ?? 'Tono no disponible';
     final error = active ? player.error : null;
     return Container(
       margin: const EdgeInsets.fromLTRB(8, 6, 8, 6),
@@ -279,7 +280,7 @@ class _PlayerBar extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: active && error == null
-                ? _Progress(player: player, subtitle: subtitle, tono: hymn.tono)
+                ? _Progress(player: player, subtitle: subtitle, tono: tono)
                 : Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Row(
@@ -295,8 +296,8 @@ class _PlayerBar extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (hymn.tono != null)
-                          Text(hymn.tono!, style: const TextStyle(fontSize: 12)),
+                        const SizedBox(width: 6),
+                          Text(tono, style: const TextStyle(fontSize: 11, color: Brand.gris)),
                       ],
                     ),
                   ),
