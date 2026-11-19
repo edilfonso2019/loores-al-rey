@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/hymn_repository.dart';
 import 'screens/shell_screen.dart';
@@ -38,7 +39,8 @@ Future<void> main() async {
   final media = MediaService();
   await Future.wait([
     state.init(),
-    media.init(),
+    // La ubicación de descargas (interna / SD) se guarda en preferencias.
+    SharedPreferences.getInstance().then((prefs) => media.init(prefs: prefs)),
     HymnRepository.instance.load(),
   ]);
   runApp(

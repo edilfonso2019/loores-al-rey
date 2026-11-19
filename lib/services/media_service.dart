@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/hymn_repository.dart';
 import '../models/hymn.dart';
@@ -30,6 +31,15 @@ class MediaNotAvailable implements Exception {
   String toString() => message;
 }
 
+/// Dónde se guardan las descargas nuevas.
+enum StorageLocation {
+  interna('Memoria interna'),
+  externa('Tarjeta SD');
+
+  final String label;
+  const StorageLocation(this.label);
+}
+
 /// Una descarga guardada en el teléfono.
 class DownloadedItem {
   final Hymn hymn;
@@ -41,54 +51,122 @@ class DownloadedItem {
 
 /// URLs del servidor y descargas offline (audio y partituras).
 ///
-/// Archivos en `<documentos>/descargas/<himnario>/<tipo>/<n>.<ext>`.
+/// Archivos en `<raíz>/descargas/<himnario>/<tipo>/<n>.<ext>`, donde la raíz
+/// es la memoria interna de la app o su carpeta en la tarjeta SD. Cada
+/// descarga recuerda dónde quedó: cambiar de ubicación no pierde las previas.
 class MediaService extends ChangeNotifier {
-  MediaService({http.Client? client, Future<Directory> Function()? baseDir})
-    : _client = client ?? http.Client(),
-      _baseDir = baseDir ?? getApplicationDocumentsDirectory;
+  MediaService({
+    http.Client? client,
+    Future<Directory> Function()? baseDir,
+    Future<List<Directory>?> Function()? externalDirs,
+  }) : _client = client ?? http.Client(),
+       _baseDir = baseDir ?? getApplicationDocumentsDirectory,
+       _externalDirs = externalDirs ?? _defaultExternalDirs;
 
   final http.Client _client;
   final Future<Directory> Function() _baseDir;
-  Directory? _root;
+  final Future<List<Directory>?> Function() _externalDirs;
+  Directory? _internalRoot;
+  Directory? _externalRoot;
+  SharedPreferences? _prefs;
+  static const _kLocation = 'downloadLocation';
+
+  /// Ubicación elegida para las descargas nuevas.
+  StorageLocation location = StorageLocation.interna;
 
   /// Progreso 0..1 de descargas en curso, por clave "libro-n-tipo".
   final Map<String, double> progress = {};
 
-  /// Claves de archivos ya descargados (caché en memoria).
-  final Set<String> _downloaded = {};
+  /// Descargas guardadas: clave → archivo (en la ubicación donde quedó).
+  final Map<String, File> _downloaded = {};
 
   /// Descarga masiva en curso.
   bool bulkRunning = false;
   bool _bulkCancel = false;
   int bulkDone = 0;
   int bulkTotal = 0;
+  MediaKind? bulkKind;
 
   static String key(Hymn h, MediaKind k) => '${h.id}-${k.name}';
 
-  /// false si el dispositivo no permite guardar archivos (p. ej. web).
-  bool get canDownload => _root != null;
+  static Future<List<Directory>?> _defaultExternalDirs() async {
+    if (kIsWeb || !Platform.isAndroid) return null;
+    return getExternalStorageDirectories();
+  }
 
-  Future<void> init() async {
-    final Directory docs;
+  /// true si hay tarjeta SD (u otro almacenamiento extraíble) disponible.
+  bool get hasExternal => _externalRoot != null;
+
+  Directory? get _targetRoot =>
+      location == StorageLocation.externa && _externalRoot != null
+      ? _externalRoot
+      : _internalRoot;
+
+  /// false si el dispositivo no permite guardar archivos (p. ej. web).
+  bool get canDownload => _targetRoot != null;
+
+  /// Ruta de la carpeta de descargas de [l] (para mostrarla), o null.
+  String? locationPath(StorageLocation l) =>
+      (l == StorageLocation.interna ? _internalRoot : _externalRoot)?.path;
+
+  Future<void> init({SharedPreferences? prefs}) async {
+    _prefs = prefs;
     try {
-      docs = await _baseDir();
+      final docs = await _baseDir();
+      _internalRoot = Directory(p.join(docs.path, 'descargas'));
     } catch (_) {
       // Sin carpeta de documentos (web o error del sistema): solo streaming.
-      notifyListeners();
-      return;
     }
-    _root = Directory(p.join(docs.path, 'descargas'));
-    if (await _root!.exists()) {
-      await for (final e in _root!.list(recursive: true)) {
-        if (e is! File || e.path.endsWith('.part')) continue;
-        final parts = p.split(p.relative(e.path, from: _root!.path));
-        if (parts.length != 3) continue;
-        final n = p.basenameWithoutExtension(parts[2]);
-        _downloaded.add('${parts[0]}-$n-${parts[1]}');
+    try {
+      // getExternalStorageDirectories devuelve primero el almacenamiento
+      // "emulado" (que en realidad es memoria interna) y luego la SD.
+      final dirs = await _externalDirs() ?? const <Directory>[];
+      final sd = dirs.where((d) => !d.path.startsWith('/storage/emulated/'));
+      if (sd.isNotEmpty) {
+        _externalRoot = Directory(p.join(sd.first.path, 'descargas'));
       }
+    } catch (_) {
+      // Sin almacenamiento externo.
+    }
+    final saved = prefs?.getString(_kLocation);
+    location = StorageLocation.values.firstWhere(
+      (l) => l.name == saved,
+      orElse: () => StorageLocation.interna,
+    );
+    for (final root in [?_internalRoot, ?_externalRoot]) {
+      await _scan(root);
     }
     notifyListeners();
   }
+
+  /// Registra los archivos ya descargados en [root].
+  Future<void> _scan(Directory root) async {
+    if (!await root.exists()) return;
+    await for (final e in root.list(recursive: true)) {
+      if (e is! File || e.path.endsWith('.part')) continue;
+      final parts = p.split(p.relative(e.path, from: root.path));
+      if (parts.length != 3) continue;
+      final n = p.basenameWithoutExtension(parts[2]);
+      _downloaded['${parts[0]}-$n-${parts[1]}'] = e;
+    }
+  }
+
+  /// Cambia dónde se guardan las descargas NUEVAS.
+  Future<void> setLocation(StorageLocation l) async {
+    if (l == StorageLocation.externa && !hasExternal) return;
+    location = l;
+    await _prefs?.setString(_kLocation, l.name);
+    notifyListeners();
+  }
+
+  /// Cuántos recursos de [kind] están descargados (de [book] si se indica).
+  int downloadedCount(MediaKind kind, {String? book}) => _downloaded.keys
+      .where(
+        (k) =>
+            k.endsWith('-${kind.name}') &&
+            (book == null || k.startsWith('$book-')),
+      )
+      .length;
 
   /// URL remota o null si el himnario no tiene servidor.
   String? remoteUrl(Hymn h, MediaKind k) {
@@ -102,16 +180,16 @@ class MediaService extends ChangeNotifier {
     return tpl.replaceAll('{n}', '${h.number}');
   }
 
-  File _fileFor(Hymn h, MediaKind k) =>
-      File(p.join(_root!.path, h.book, k.name, '${h.number}.${k.ext}'));
+  /// Dónde se guardará una descarga NUEVA.
+  File _newFileFor(Hymn h, MediaKind k) =>
+      File(p.join(_targetRoot!.path, h.book, k.name, '${h.number}.${k.ext}'));
 
-  bool isDownloaded(Hymn h, MediaKind k) => _downloaded.contains(key(h, k));
+  bool isDownloaded(Hymn h, MediaKind k) => _downloaded.containsKey(key(h, k));
 
   bool isDownloading(Hymn h, MediaKind k) => progress.containsKey(key(h, k));
 
   /// Archivo local si está descargado.
-  File? localFile(Hymn h, MediaKind k) =>
-      isDownloaded(h, k) && _root != null ? _fileFor(h, k) : null;
+  File? localFile(Hymn h, MediaKind k) => _downloaded[key(h, k)];
 
   /// URI para reproducir/mostrar: local si existe, si no el servidor.
   Uri? sourceUri(Hymn h, MediaKind k) {
@@ -203,7 +281,7 @@ class MediaService extends ChangeNotifier {
       );
     }
     final id = key(h, k);
-    final file = _fileFor(h, k);
+    final file = _newFileFor(h, k);
     final tmp = File('${file.path}.part');
     progress[id] = 0;
     notifyListeners();
@@ -244,7 +322,7 @@ class MediaService extends ChangeNotifier {
         throw const HttpException('La descarga se interrumpió.');
       }
       await tmp.rename(file.path);
-      _downloaded.add(id);
+      _downloaded[id] = file;
       _available[id] = true;
       return file;
     } catch (_) {
@@ -257,10 +335,8 @@ class MediaService extends ChangeNotifier {
   }
 
   Future<void> delete(Hymn h, MediaKind k) async {
-    if (!canDownload) return;
-    final f = _fileFor(h, k);
-    if (await f.exists()) await f.delete();
-    _downloaded.remove(key(h, k));
+    final f = _downloaded.remove(key(h, k));
+    if (f != null && await f.exists()) await f.delete();
     notifyListeners();
   }
 
@@ -268,7 +344,7 @@ class MediaService extends ChangeNotifier {
   Future<List<DownloadedItem>> listDownloads() async {
     final out = <DownloadedItem>[];
     final repo = HymnRepository.instance;
-    for (final k in _downloaded) {
+    for (final MapEntry(key: k, value: f) in _downloaded.entries) {
       final parts = k.split('-');
       if (parts.length != 3) continue;
       final h = repo.find(parts[0], int.tryParse(parts[1]) ?? -1);
@@ -276,7 +352,6 @@ class MediaService extends ChangeNotifier {
           .where((m) => m.name == parts[2])
           .firstOrNull;
       if (h == null || kind == null) continue;
-      final f = _fileFor(h, kind);
       if (await f.exists()) {
         out.add(DownloadedItem(h, kind, f, await f.length()));
       }
@@ -290,11 +365,19 @@ class MediaService extends ChangeNotifier {
     return out;
   }
 
-  Future<void> deleteAll() async {
-    if (_root != null && await _root!.exists()) {
-      await _root!.delete(recursive: true);
+  /// Borra todas las descargas, o solo las de [kind].
+  Future<void> deleteAll({MediaKind? kind}) async {
+    final keys = _downloaded.keys
+        .where((k) => kind == null || k.endsWith('-${kind.name}'))
+        .toList();
+    for (final k in keys) {
+      final f = _downloaded.remove(k);
+      try {
+        if (f != null && await f.exists()) await f.delete();
+      } catch (_) {
+        // Archivo ya borrado o SD retirada: se ignora.
+      }
     }
-    _downloaded.clear();
     notifyListeners();
   }
 
@@ -307,6 +390,7 @@ class MediaService extends ChangeNotifier {
   Future<int> downloadAll(List<Hymn> hymns, MediaKind kind) async {
     if (bulkRunning) return 0;
     bulkRunning = true;
+    bulkKind = kind;
     bulkError = null;
     _bulkCancel = false;
     final pending = hymns.where((h) => !isDownloaded(h, kind)).toList();
