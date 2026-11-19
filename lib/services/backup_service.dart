@@ -53,8 +53,7 @@ class BackupService {
     );
     if (files.isEmpty) return false;
     final f = files.first;
-    final bytes = f.bytes ?? (f.path != null ? await File(f.path!).readAsBytes() : null);
-    if (bytes == null) throw const FormatException('No se pudo leer el archivo.');
+    final bytes = await f.xFile.readAsBytes();
     await _restoreBytes(bytes);
     return true;
   }

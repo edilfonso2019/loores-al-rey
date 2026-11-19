@@ -127,7 +127,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       controller: _scroll,
                       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                       itemCount: _results.length,
-                      separatorBuilder: (_, _) => const Divider(),
+                      separatorBuilder: (context, index) => const Divider(),
                       itemBuilder: (_, i) {
                         final h = _results[i];
                         return InkWell(

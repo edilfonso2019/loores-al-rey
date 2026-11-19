@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pdfrx/pdfrx.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -10,6 +9,7 @@ import '../services/media_service.dart';
 import '../services/player_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/score_view.dart';
 import 'projection_screen.dart';
 import 'shell_screen.dart';
 
@@ -119,7 +119,7 @@ class _HymnScreenState extends State<HymnScreen> {
         children: [
           Positioned.fill(
             child: showScore
-                ? _ScoreView(key: ValueKey('pdf-${h.id}'), hymn: h)
+                ? ScoreView(key: ValueKey('pdf-${h.id}'), hymn: h)
                 : GestureDetector(
                     // Deslizar a los lados: himno anterior / siguiente.
                     onHorizontalDragEnd: (d) {
@@ -217,53 +217,6 @@ class _Lyrics extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ScoreView extends StatelessWidget {
-  const _ScoreView({super.key, required this.hymn});
-  final Hymn hymn;
-
-  @override
-  Widget build(BuildContext context) {
-    final media = context.watch<MediaService>();
-    final local = media.localFile(hymn, MediaKind.partitura);
-    final url = media.remoteUrl(hymn, MediaKind.partitura);
-    if (local == null && url == null) {
-      return const _Message(icon: Icons.music_off, text: 'Partitura aún no disponible.');
-    }
-    final params = PdfViewerParams(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      maxScale: 8,
-      errorBannerBuilder: (context, error, stackTrace, documentRef) => const _Message(
-        icon: Icons.cloud_off,
-        text: 'No se pudo cargar la partitura.\nRevisa tu conexión o descárgala para verla sin internet.',
-      ),
-    );
-    return local != null
-        ? PdfViewer.file(local.path, params: params)
-        : PdfViewer.uri(Uri.parse(url!), params: params);
-  }
-}
-
-class _Message extends StatelessWidget {
-  const _Message({required this.icon, required this.text});
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 48, color: Brand.gris),
-              const SizedBox(height: 12),
-              Text(text, textAlign: TextAlign.center),
-            ],
-          ),
-        ),
-      );
 }
 
 class _FavoriteButton extends StatelessWidget {
