@@ -15,10 +15,10 @@ class ServerConfig {
   });
 
   factory ServerConfig.fromJson(Map<String, dynamic> json) => ServerConfig(
-        instrumental: json['instrumental'] as String,
-        cantado: json['cantado'] as String,
-        partitura: json['partitura'] as String,
-      );
+    instrumental: json['instrumental'] as String,
+    cantado: json['cantado'] as String,
+    partitura: json['partitura'] as String,
+  );
 }
 
 const _base = 'http://192.241.144.242';

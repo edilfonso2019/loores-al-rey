@@ -15,7 +15,9 @@ class DownloadsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Administrador de descargas')),
       body: FutureBuilder<List<DownloadedItem>>(
-        key: ValueKey('${media.progress.length}-${media.bulkDone}-${media.bulkRunning}'),
+        key: ValueKey(
+          '${media.progress.length}-${media.bulkDone}-${media.bulkRunning}',
+        ),
         future: media.listDownloads(),
         builder: (context, snap) {
           final items = snap.data ?? const [];
@@ -29,7 +31,12 @@ class DownloadsScreen extends StatelessWidget {
                     ? null
                     : TextButton(
                         onPressed: () async {
-                          if (await confirm(context, 'Borrar todo', '¿Borrar todas las descargas?', ok: 'Borrar')) {
+                          if (await confirm(
+                            context,
+                            'Borrar todo',
+                            '¿Borrar todas las descargas?',
+                            ok: 'Borrar',
+                          )) {
                             await media.deleteAll();
                           }
                         },
@@ -38,35 +45,61 @@ class DownloadsScreen extends StatelessWidget {
               ),
               if (media.bulkRunning)
                 ListTile(
-                  title: Text('Descargando ${media.bulkDone}/${media.bulkTotal}…'),
-                  subtitle: LinearProgressIndicator(value: media.bulkTotal == 0 ? null : media.bulkDone / media.bulkTotal),
-                  trailing: TextButton(onPressed: media.cancelBulk, child: const Text('Cancelar')),
+                  title: Text(
+                    'Descargando ${media.bulkDone}/${media.bulkTotal}…',
+                  ),
+                  subtitle: LinearProgressIndicator(
+                    value: media.bulkTotal == 0
+                        ? null
+                        : media.bulkDone / media.bulkTotal,
+                  ),
+                  trailing: TextButton(
+                    onPressed: media.cancelBulk,
+                    child: const Text('Cancelar'),
+                  ),
                 )
               else ...[
                 if (media.bulkError != null)
                   ListTile(
-                    leading: const Icon(Icons.error_outline, color: Colors.redAccent),
+                    leading: const Icon(
+                      Icons.error_outline,
+                      color: Colors.redAccent,
+                    ),
                     title: Text('Descarga detenida: ${media.bulkError}'),
                   ),
                 ListTile(
                   leading: const Icon(Icons.library_music),
                   title: const Text('Descargar todos los instrumentales'),
-                  subtitle: const Text('Himnario Clásico · requiere mucho espacio y datos'),
+                  subtitle: const Text(
+                    'Himnario Clásico · requiere mucho espacio y datos',
+                  ),
                   onTap: () async {
-                    if (!await confirm(context, 'Descarga masiva',
-                        'Se descargarán ${clasico.length} pistas (varios cientos de MB). Usa Wi-Fi. ¿Continuar?',
-                        ok: 'Descargar')) {
+                    if (!await confirm(
+                      context,
+                      'Descarga masiva',
+                      'Se descargarán ${clasico.length} pistas (varios cientos de MB). Usa Wi-Fi. ¿Continuar?',
+                      ok: 'Descargar',
+                    )) {
                       return;
                     }
-                    final n = await media.downloadAll(clasico, MediaKind.instrumental);
-                    if (context.mounted) showSnack(context, '$n pistas descargadas');
+                    final n = await media.downloadAll(
+                      clasico,
+                      MediaKind.instrumental,
+                    );
+                    if (context.mounted) {
+                      showSnack(context, '$n pistas descargadas');
+                    }
                   },
                 ),
               ],
               const Divider(),
               for (final d in items)
                 ListTile(
-                  leading: Icon(d.kind == MediaKind.partitura ? Icons.picture_as_pdf : Icons.music_note),
+                  leading: Icon(
+                    d.kind == MediaKind.partitura
+                        ? Icons.picture_as_pdf
+                        : Icons.music_note,
+                  ),
                   title: Text('${d.hymn.number} - ${d.hymn.title}'),
                   subtitle: Text('${d.kind.label} · ${formatBytes(d.bytes)}'),
                   trailing: IconButton(

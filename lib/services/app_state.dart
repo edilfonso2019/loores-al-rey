@@ -29,7 +29,7 @@ class AppState extends ChangeNotifier {
   final List<String> history = [];
   final List<Playlist> playlists = [];
   double fontSize = 18;
-  ThemeMode themeMode = ThemeMode.light;
+  ThemeMode themeMode = ThemeMode.system;
   LyricsBackground background = LyricsBackground.defecto;
 
   /// Solo letra: oculta reproductor y pestañas.
@@ -56,7 +56,7 @@ class AppState extends ChangeNotifier {
       ..clear()
       ..addAll(_decodePlaylists(p.getString(_kPlaylists)));
     fontSize = (p.getDouble(_kFontSize) ?? 18).clamp(minFont, maxFont);
-    themeMode = ThemeMode.values[(p.getInt(_kThemeMode) ?? 1).clamp(0, 2)];
+    themeMode = ThemeMode.values[(p.getInt(_kThemeMode) ?? 0).clamp(0, 2)];
     background = LyricsBackground.values.firstWhere(
       (b) => b.name == p.getString(_kBackground),
       orElse: () => LyricsBackground.defecto,
@@ -218,27 +218,29 @@ class AppState extends ChangeNotifier {
 
   /// Favoritos + playlists + historial + ajustes en un mapa JSON.
   Map<String, dynamic> toBackup() => {
-        'app': 'loores_al_rey',
-        'version': backupVersion,
-        'fecha': DateTime.now().toIso8601String(),
-        'favoritos': favorites,
-        'historial': history,
-        'playlists': playlists.map((p) => p.toJson()).toList(),
-        'ajustes': {
-          'fontSize': fontSize,
-          'themeMode': themeMode.index,
-          'fondo': background.name,
-          'modoBasico': basicMode,
-          'tocarContinuamente': continuousPlay,
-          'modoMinimizado': minimizedMode,
-        },
-      };
+    'app': 'loores_al_rey',
+    'version': backupVersion,
+    'fecha': DateTime.now().toIso8601String(),
+    'favoritos': favorites,
+    'historial': history,
+    'playlists': playlists.map((p) => p.toJson()).toList(),
+    'ajustes': {
+      'fontSize': fontSize,
+      'themeMode': themeMode.index,
+      'fondo': background.name,
+      'modoBasico': basicMode,
+      'tocarContinuamente': continuousPlay,
+      'modoMinimizado': minimizedMode,
+    },
+  };
 
   /// Reemplaza el estado actual por el del respaldo. Lanza [FormatException]
   /// si el archivo no es un respaldo de la app.
   Future<void> restoreBackup(Map<String, dynamic> data) async {
     if (data['app'] != 'loores_al_rey') {
-      throw const FormatException('El archivo no es un respaldo de Loores al Rey.');
+      throw const FormatException(
+        'El archivo no es un respaldo de Loores al Rey.',
+      );
     }
     favorites
       ..clear()
@@ -248,11 +250,18 @@ class AppState extends ChangeNotifier {
       ..addAll(List<String>.from(data['historial'] as List? ?? const []));
     playlists
       ..clear()
-      ..addAll((data['playlists'] as List? ?? const [])
-          .map((e) => Playlist.fromJson(e as Map<String, dynamic>)));
+      ..addAll(
+        (data['playlists'] as List? ?? const []).map(
+          (e) => Playlist.fromJson(e as Map<String, dynamic>),
+        ),
+      );
     final a = (data['ajustes'] as Map?)?.cast<String, dynamic>() ?? const {};
-    fontSize = ((a['fontSize'] as num?)?.toDouble() ?? fontSize).clamp(minFont, maxFont);
-    themeMode = ThemeMode.values[((a['themeMode'] as int?) ?? themeMode.index).clamp(0, 2)];
+    fontSize = ((a['fontSize'] as num?)?.toDouble() ?? fontSize).clamp(
+      minFont,
+      maxFont,
+    );
+    themeMode = ThemeMode
+        .values[((a['themeMode'] as int?) ?? themeMode.index).clamp(0, 2)];
     background = LyricsBackground.values.firstWhere(
       (b) => b.name == a['fondo'],
       orElse: () => background,
@@ -265,7 +274,10 @@ class AppState extends ChangeNotifier {
     if (p != null) {
       await p.setStringList(_kFavorites, favorites);
       await p.setStringList(_kHistory, history);
-      await p.setString(_kPlaylists, jsonEncode(playlists.map((e) => e.toJson()).toList()));
+      await p.setString(
+        _kPlaylists,
+        jsonEncode(playlists.map((e) => e.toJson()).toList()),
+      );
       await p.setDouble(_kFontSize, fontSize);
       await p.setInt(_kThemeMode, themeMode.index);
       await p.setString(_kBackground, background.name);

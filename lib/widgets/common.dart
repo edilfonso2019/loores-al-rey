@@ -27,7 +27,12 @@ class HighlightText extends StatelessWidget {
     final q = HymnRepository.normalize(query.trim());
     final norm = HymnRepository.normalize(text);
     if (q.isEmpty || norm.length != text.length || !norm.contains(q)) {
-      return Text(text, style: base, maxLines: maxLines, overflow: TextOverflow.ellipsis);
+      return Text(
+        text,
+        style: base,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+      );
     }
     final dark = Theme.of(context).brightness == Brightness.dark;
     final hl = base.copyWith(
@@ -74,7 +79,11 @@ Future<void> showAddToPlaylist(BuildContext context, Hymn hymn) {
               leading: const Icon(Icons.playlist_add),
               title: const Text('Nueva lista de culto'),
               onTap: () async {
-                final name = await promptText(ctx, title: 'Nueva lista de culto', hint: 'Ej. Culto sábado 15');
+                final name = await promptText(
+                  ctx,
+                  title: 'Nueva lista de culto',
+                  hint: 'Ej. Culto sábado 15',
+                );
                 if (name == null || !ctx.mounted) return;
                 final pl = state.createPlaylist(name);
                 state.addToPlaylist(pl, hymn.id);
@@ -87,11 +96,18 @@ Future<void> showAddToPlaylist(BuildContext context, Hymn hymn) {
                 leading: const Icon(Icons.queue_music),
                 title: Text(pl.name),
                 subtitle: Text('${pl.items.length} himnos'),
-                trailing: pl.items.contains(hymn.id) ? const Icon(Icons.check) : null,
+                trailing: pl.items.contains(hymn.id)
+                    ? const Icon(Icons.check)
+                    : null,
                 onTap: () {
                   final added = state.addToPlaylist(pl, hymn.id);
                   Navigator.pop(ctx);
-                  showSnack(context, added ? 'Agregado a "${pl.name}"' : 'Ya estaba en "${pl.name}"');
+                  showSnack(
+                    context,
+                    added
+                        ? 'Agregado a "${pl.name}"'
+                        : 'Ya estaba en "${pl.name}"',
+                  );
                 },
               ),
           ],
@@ -123,22 +139,39 @@ Future<String?> promptText(
         onSubmitted: (v) => Navigator.pop(ctx, v),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-        FilledButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text('Aceptar')),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, ctrl.text),
+          child: const Text('Aceptar'),
+        ),
       ],
     ),
   );
 }
 
-Future<bool> confirm(BuildContext context, String title, String message, {String ok = 'Aceptar'}) async {
+Future<bool> confirm(
+  BuildContext context,
+  String title,
+  String message, {
+  String ok = 'Aceptar',
+}) async {
   final r = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
       title: Text(title),
       content: Text(message),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ok)),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(ok),
+        ),
       ],
     ),
   );
@@ -157,7 +190,8 @@ String hymnLabel(Hymn h) {
   return '${h.number} ($sigla) - ${h.title}';
 }
 
-String hymnalName(Hymn h) => HymnRepository.instance.hymnal(h.book)?.nombre ?? '';
+String hymnalName(Hymn h) =>
+    HymnRepository.instance.hymnal(h.book)?.nombre ?? '';
 
 String formatDuration(Duration d) {
   final m = d.inMinutes;

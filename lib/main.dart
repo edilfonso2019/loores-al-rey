@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +14,9 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // De borde a borde: la barra inferior de la app se extiende detrás de los
+  // botones del sistema en lugar de dejar una franja gris.
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   try {
     await JustAudioBackground.init(
       androidNotificationChannelId: 'pe.looresalrey.app.audio',
@@ -31,16 +35,18 @@ Future<void> main() async {
     media.init(),
     HymnRepository.instance.load(),
   ]);
-  runApp(MultiProvider(
-    providers: [
-      ChangeNotifierProvider.value(value: state),
-      ChangeNotifierProvider.value(value: media),
-      ChangeNotifierProvider(create: (_) => PlayerService(media, state)),
-      Provider(create: (_) => BackupService(state)),
-      ChangeNotifierProvider(create: (_) => NavController()),
-    ],
-    child: const LooresAlReyApp(),
-  ));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: state),
+        ChangeNotifierProvider.value(value: media),
+        ChangeNotifierProvider(create: (_) => PlayerService(media, state)),
+        Provider(create: (_) => BackupService(state)),
+        ChangeNotifierProvider(create: (_) => NavController()),
+      ],
+      child: const LooresAlReyApp(),
+    ),
+  );
 }
 
 class LooresAlReyApp extends StatelessWidget {
@@ -48,7 +54,11 @@ class LooresAlReyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = context.select<AppState, ThemeMode>((s) => s.themeMode);
+    // El fondo "Noche" oscurece toda la app, no solo la letra.
+    final themeMode = context.select<AppState, ThemeMode>(
+      (s) =>
+          s.background == LyricsBackground.noche ? ThemeMode.dark : s.themeMode,
+    );
     return MaterialApp(
       title: 'Loores al Rey',
       debugShowCheckedModeBanner: false,

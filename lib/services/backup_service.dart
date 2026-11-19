@@ -20,8 +20,8 @@ class BackupService {
   bool _signInReady = false;
 
   Uint8List _encode() => Uint8List.fromList(
-        utf8.encode(const JsonEncoder.withIndent(' ').convert(_state.toBackup())),
-      );
+    utf8.encode(const JsonEncoder.withIndent(' ').convert(_state.toBackup())),
+  );
 
   Future<void> _restoreBytes(List<int> bytes) async {
     final data = jsonDecode(utf8.decode(bytes));
@@ -64,12 +64,15 @@ class BackupService {
     final signIn = GoogleSignIn.instance;
     if (!_signInReady) {
       await signIn.initialize(
-        serverClientId: kGoogleServerClientId.isEmpty ? null : kGoogleServerClientId,
+        serverClientId: kGoogleServerClientId.isEmpty
+            ? null
+            : kGoogleServerClientId,
       );
       _signInReady = true;
     }
     final client = signIn.authorizationClient;
-    final authz = await client.authorizationForScopes(_scopes) ??
+    final authz =
+        await client.authorizationForScopes(_scopes) ??
         await client.authorizeScopes(_scopes);
     return drive.DriveApi(authz.authClient(scopes: _scopes));
   }
@@ -89,8 +92,11 @@ class BackupService {
   Future<void> backupToDrive() async {
     final api = await _driveApi();
     final bytes = _encode();
-    final media = drive.Media(Stream.value(bytes), bytes.length,
-        contentType: 'application/json');
+    final media = drive.Media(
+      Stream.value(bytes),
+      bytes.length,
+      contentType: 'application/json',
+    );
     final existing = await _findBackup(api);
     if (existing?.id != null) {
       await api.files.update(drive.File(), existing!.id!, uploadMedia: media);
@@ -110,10 +116,12 @@ class BackupService {
     final api = await _driveApi();
     final existing = await _findBackup(api);
     if (existing?.id == null) return null;
-    final media = await api.files.get(
-      existing!.id!,
-      downloadOptions: drive.DownloadOptions.fullMedia,
-    ) as drive.Media;
+    final media =
+        await api.files.get(
+              existing!.id!,
+              downloadOptions: drive.DownloadOptions.fullMedia,
+            )
+            as drive.Media;
     final bytes = <int>[];
     await for (final chunk in media.stream) {
       bytes.addAll(chunk);

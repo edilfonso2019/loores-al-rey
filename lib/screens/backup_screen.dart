@@ -41,16 +41,23 @@ class _BackupScreenState extends State<BackupScreen> {
             children: [
               const Padding(
                 padding: EdgeInsets.all(16),
-                child: Text('Se respaldan favoritos, listas de culto, historial y ajustes. '
-                    'Las descargas de audio no se incluyen.'),
+                child: Text(
+                  'Se respaldan favoritos, listas de culto, historial y ajustes. '
+                  'Las descargas de audio no se incluyen.',
+                ),
               ),
-              const ListTile(title: Text('ARCHIVO', style: TextStyle(fontSize: 12))),
+              const ListTile(
+                title: Text('ARCHIVO', style: TextStyle(fontSize: 12)),
+              ),
               ListTile(
                 leading: const Icon(Icons.save_alt),
                 title: const Text('Exportar a un archivo'),
                 onTap: _busy
                     ? null
-                    : () => _run('Respaldo guardado', () async => await backup.exportToFile() ? '' : null),
+                    : () => _run(
+                        'Respaldo guardado',
+                        () async => await backup.exportToFile() ? '' : null,
+                      ),
               ),
               ListTile(
                 leading: const Icon(Icons.file_open),
@@ -59,15 +66,28 @@ class _BackupScreenState extends State<BackupScreen> {
                 onTap: _busy
                     ? null
                     : () async {
-                        if (!await confirm(context, 'Importar respaldo', 'Esto reemplazará tus favoritos, listas y ajustes. ¿Continuar?')) return;
-                        await _run('Respaldo restaurado', () async => await backup.importFromFile() ? '' : null);
+                        if (!await confirm(
+                          context,
+                          'Importar respaldo',
+                          'Esto reemplazará tus favoritos, listas y ajustes. ¿Continuar?',
+                        )) {
+                          return;
+                        }
+                        await _run(
+                          'Respaldo restaurado',
+                          () async => await backup.importFromFile() ? '' : null,
+                        );
                       },
               ),
-              const ListTile(title: Text('GOOGLE DRIVE', style: TextStyle(fontSize: 12))),
+              const ListTile(
+                title: Text('GOOGLE DRIVE', style: TextStyle(fontSize: 12)),
+              ),
               if (last != null)
                 ListTile(
                   leading: const Icon(Icons.check_circle_outline),
-                  title: Text('Último respaldo: ${last.toLocal().toString().substring(0, 16)}'),
+                  title: Text(
+                    'Último respaldo: ${last.toLocal().toString().substring(0, 16)}',
+                  ),
                 ),
               ListTile(
                 leading: const Icon(Icons.cloud_upload),
@@ -75,9 +95,9 @@ class _BackupScreenState extends State<BackupScreen> {
                 onTap: _busy
                     ? null
                     : () => _run('Respaldo subido a Google Drive', () async {
-                          await backup.backupToDrive();
-                          return '';
-                        }),
+                        await backup.backupToDrive();
+                        return '';
+                      }),
               ),
               ListTile(
                 leading: const Icon(Icons.cloud_download),
@@ -86,16 +106,30 @@ class _BackupScreenState extends State<BackupScreen> {
                 onTap: _busy
                     ? null
                     : () async {
-                        if (!await confirm(context, 'Restaurar', 'Esto reemplazará tus favoritos, listas y ajustes. ¿Continuar?')) return;
+                        if (!await confirm(
+                          context,
+                          'Restaurar',
+                          'Esto reemplazará tus favoritos, listas y ajustes. ¿Continuar?',
+                        )) {
+                          return;
+                        }
                         await _run('Respaldo restaurado', () async {
                           final d = await backup.restoreFromDrive();
-                          return d == null ? 'No hay respaldo en tu Google Drive.' : '';
+                          return d == null
+                              ? 'No hay respaldo en tu Google Drive.'
+                              : '';
                         });
                       },
               ),
             ],
           ),
-          if (_busy) const Positioned.fill(child: ColoredBox(color: Color(0x44000000), child: Center(child: CircularProgressIndicator()))),
+          if (_busy)
+            const Positioned.fill(
+              child: ColoredBox(
+                color: Color(0x44000000),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
         ],
       ),
     );

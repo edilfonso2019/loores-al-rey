@@ -34,10 +34,11 @@ class Hymnal {
       nombre: json['nombre'] as String,
       activo: json['activo'] as bool? ?? false,
       categorias: List<String>.from(json['categorias'] as List? ?? const []),
-      himnos: (json['himnos'] as List? ?? const [])
-          .map((e) => Hymn.fromJson(id, e as Map<String, dynamic>))
-          .toList()
-        ..sort((a, b) => a.number.compareTo(b.number)),
+      himnos:
+          (json['himnos'] as List? ?? const [])
+              .map((e) => Hymn.fromJson(id, e as Map<String, dynamic>))
+              .toList()
+            ..sort((a, b) => a.number.compareTo(b.number)),
       servidor: servidorJson != null
           ? ServerConfig.fromJson(servidorJson)
           : kServidores[id],
@@ -95,17 +96,17 @@ class Hymn {
   String get fullText => [...estrofas, if (hasChorus) coro!].join('\n\n');
 
   factory Hymn.fromJson(String book, Map<String, dynamic> json) => Hymn(
-        book: book,
-        number: json['n'] as int,
-        title: (json['t'] as String).trim(),
-        categoryIndex: json['cat'] as int?,
-        estrofas: List<String>.from(json['estrofas'] as List),
-        coro: json['coro'] as String?,
-        cita: json['cita'] as String?,
-        versiculo: json['versiculo'] as String?,
-        autor: json['autor'] as String?,
-        tono: json['tono'] as String?,
-      );
+    book: book,
+    number: json['n'] as int,
+    title: (json['t'] as String).trim(),
+    categoryIndex: json['cat'] as int?,
+    estrofas: List<String>.from(json['estrofas'] as List),
+    coro: json['coro'] as String?,
+    cita: json['cita'] as String?,
+    versiculo: json['versiculo'] as String?,
+    autor: json['autor'] as String?,
+    tono: json['tono'] as String?,
+  );
 }
 
 class Verse {

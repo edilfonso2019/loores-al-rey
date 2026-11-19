@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Colores del brandbook IASDMR.
 class Brand {
@@ -30,22 +31,38 @@ enum LyricsBackground {
 }
 
 class AppTheme {
+  /// Barras del sistema transparentes; iconos claros arriba (sobre el azul)
+  /// y, abajo, según el tema.
+  static SystemUiOverlayStyle overlay({required bool dark}) =>
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarDividerColor: Colors.transparent,
+        systemNavigationBarIconBrightness: dark
+            ? Brightness.light
+            : Brightness.dark,
+        systemNavigationBarContrastEnforced: false,
+      );
+
   static ThemeData light() => _base(Brightness.light);
   static ThemeData dark() => _base(Brightness.dark);
 
   static ThemeData _base(Brightness brightness) {
     final dark = brightness == Brightness.dark;
-    final scheme = ColorScheme.fromSeed(
-      seedColor: Brand.azul,
-      brightness: brightness,
-    ).copyWith(
-      primary: dark ? Brand.azulClaro : Brand.azul,
-      onPrimary: Colors.white,
-      secondary: Brand.dorado,
-      onSecondary: Brand.azul,
-      tertiary: Brand.coral,
-      surface: dark ? const Color(0xFF0E1526) : Brand.fondo,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: Brand.azul,
+          brightness: brightness,
+        ).copyWith(
+          primary: dark ? Brand.azulClaro : Brand.azul,
+          onPrimary: Colors.white,
+          secondary: Brand.dorado,
+          onSecondary: Brand.azul,
+          tertiary: Brand.coral,
+          surface: dark ? const Color(0xFF0E1526) : Brand.fondo,
+        );
     final base = ThemeData(
       colorScheme: scheme,
       useMaterial3: true,
@@ -58,6 +75,7 @@ class AppTheme {
         foregroundColor: Colors.white,
         centerTitle: true,
         elevation: 0,
+        systemOverlayStyle: overlay(dark: dark),
         titleTextStyle: const TextStyle(
           fontFamily: Brand.fuente,
           fontSize: 18,
@@ -70,7 +88,9 @@ class AppTheme {
         space: 1,
         thickness: 1,
       ),
-      listTileTheme: ListTileThemeData(iconColor: dark ? Colors.white : Colors.black87),
+      listTileTheme: ListTileThemeData(
+        iconColor: dark ? Colors.white : Colors.black87,
+      ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.selected) ? Colors.white : null,
@@ -79,7 +99,9 @@ class AppTheme {
           (s) => s.contains(WidgetState.selected) ? scheme.primary : null,
         ),
       ),
-      snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 }

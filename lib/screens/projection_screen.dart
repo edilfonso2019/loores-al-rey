@@ -37,13 +37,19 @@ class _ProjectionScreenState extends State<ProjectionScreen> {
 
   void _next() {
     if (_page < widget.hymn.verses.length - 1) {
-      _controller.nextPage(duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+      _controller.nextPage(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
     }
   }
 
   void _prev() {
     if (_page > 0) {
-      _controller.previousPage(duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+      _controller.previousPage(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
     }
   }
 
@@ -55,12 +61,17 @@ class _ProjectionScreenState extends State<ProjectionScreen> {
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapUp: (d) =>
-            d.localPosition.dx < MediaQuery.sizeOf(context).width / 3 ? _prev() : _next(),
+            d.localPosition.dx < MediaQuery.sizeOf(context).width / 3
+            ? _prev()
+            : _next(),
         child: SafeArea(
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     IconButton(
@@ -71,12 +82,18 @@ class _ProjectionScreenState extends State<ProjectionScreen> {
                       child: Text(
                         '${hymn.number} · ${hymn.title}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white70, fontSize: 20),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 20,
+                        ),
                       ),
                     ),
                     Text(
                       '${_page + 1}/${hymn.verses.length}',
-                      style: const TextStyle(color: Colors.white54, fontSize: 16),
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),

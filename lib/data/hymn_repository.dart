@@ -43,7 +43,9 @@ class HymnRepository {
   Hymn? find(String book, int number) {
     final list = byBook(book);
     // Los himnos vienen ordenados y casi siempre n == índice + 1.
-    if (number >= 1 && number <= list.length && list[number - 1].number == number) {
+    if (number >= 1 &&
+        number <= list.length &&
+        list[number - 1].number == number) {
       return list[number - 1];
     }
     for (final h in list) {
@@ -120,11 +122,26 @@ class HymnRepository {
   }
 
   static const _accents = {
-    'á': 'a', 'à': 'a', 'ä': 'a', 'â': 'a',
-    'é': 'e', 'è': 'e', 'ë': 'e', 'ê': 'e',
-    'í': 'i', 'ì': 'i', 'ï': 'i', 'î': 'i',
-    'ó': 'o', 'ò': 'o', 'ö': 'o', 'ô': 'o',
-    'ú': 'u', 'ù': 'u', 'ü': 'u', 'û': 'u',
+    'á': 'a',
+    'à': 'a',
+    'ä': 'a',
+    'â': 'a',
+    'é': 'e',
+    'è': 'e',
+    'ë': 'e',
+    'ê': 'e',
+    'í': 'i',
+    'ì': 'i',
+    'ï': 'i',
+    'î': 'i',
+    'ó': 'o',
+    'ò': 'o',
+    'ö': 'o',
+    'ô': 'o',
+    'ú': 'u',
+    'ù': 'u',
+    'ü': 'u',
+    'û': 'u',
     'ñ': 'n',
   };
 

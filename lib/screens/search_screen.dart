@@ -22,6 +22,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final _scroll = ScrollController();
   String? _book; // null = Todos
   String? _category; // null = todas
+  bool _numeric = true; // En el culto casi siempre se busca por número.
   int _lastRequest = 0;
   late List<Hymn> _results;
 
@@ -38,7 +39,8 @@ class _SearchScreenState extends State<SearchScreen> {
     if (nav.searchRequest == _lastRequest) return;
     _lastRequest = nav.searchRequest;
     _book = nav.searchBook;
-    if (_category != null && !_repo.categories(book: _book).contains(_category)) {
+    if (_category != null &&
+        !_repo.categories(book: _book).contains(_category)) {
       _category = null;
     }
     _results = _repo.search(_ctrl.text, book: _book, category: _category);
@@ -59,9 +61,26 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_scroll.hasClients) _scroll.jumpTo(0);
   }
 
+  /// Cambia entre teclado numérico y de letras (hay que reabrir el teclado).
+  void _toggleKeyboard() {
+    setState(() => _numeric = !_numeric);
+    _focus.unfocus();
+    Future.delayed(const Duration(milliseconds: 60), () {
+      if (mounted) _focus.requestFocus();
+    });
+  }
+
+  /// "Buscar" en el teclado: abre el primer resultado (o el número exacto).
+  void _submit(String _) {
+    if (_ctrl.text.trim().isEmpty || _results.isEmpty) return;
+    _open(_results.first);
+  }
+
   void _open(Hymn h) {
     _focus.unfocus();
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => HymnScreen(hymn: h)));
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => HymnScreen(hymn: h)));
   }
 
   /// Línea de la letra que contiene la búsqueda (o la primera).
@@ -72,7 +91,9 @@ class _SearchScreenState extends State<SearchScreen> {
         if (HymnRepository.normalize(line).contains(q)) return line.trim();
       }
     }
-    final lines = h.estrofas.isEmpty ? const <String>[] : h.estrofas.first.split('\n');
+    final lines = h.estrofas.isEmpty
+        ? const <String>[]
+        : h.estrofas.first.split('\n');
     return lines.take(2).map((l) => l.trim()).join(' ');
   }
 
@@ -89,6 +110,9 @@ class _SearchScreenState extends State<SearchScreen> {
             controller: _ctrl,
             focus: _focus,
             onChanged: (_) => _run(),
+            onSubmitted: _submit,
+            numeric: _numeric,
+            onToggleKeyboard: _toggleKeyboard,
             onClear: () {
               _ctrl.clear();
               _run();
@@ -103,7 +127,8 @@ class _SearchScreenState extends State<SearchScreen> {
             hymnals: hymnals,
             onBook: (b) {
               _book = b;
-              if (_category != null && !_repo.categories(book: b).contains(_category)) {
+              if (_category != null &&
+                  !_repo.categories(book: b).contains(_category)) {
                 _category = null;
               }
               _run();
@@ -120,42 +145,74 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                     ),
                   )
-                : Scrollbar(
-                    controller: _scroll,
-                    interactive: true,
-                    child: ListView.separated(
-                      controller: _scroll,
-                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                      itemCount: _results.length,
-                      separatorBuilder: (context, index) => const Divider(),
-                      itemBuilder: (_, i) {
-                        final h = _results[i];
-                        return InkWell(
-                          onTap: () => _open(h),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                HighlightText(
-                                  hymnLabel(h),
-                                  query: query,
-                                  maxLines: 1,
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 17),
+                : Column(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                        child: Text(
+                          _results.length == 1
+                              ? '1 himno'
+                              : '${_results.length} himnos',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(color: Brand.gris),
+                        ),
+                      ),
+                      Expanded(
+                        child: Scrollbar(
+                          controller: _scroll,
+                          interactive: true,
+                          child: ListView.separated(
+                            controller: _scroll,
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            itemCount: _results.length,
+                            separatorBuilder: (context, index) =>
+                                const Divider(),
+                            itemBuilder: (_, i) {
+                              final h = _results[i];
+                              return InkWell(
+                                onTap: () => _open(h),
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    8,
+                                    6,
+                                    8,
+                                    6,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      HighlightText(
+                                        hymnLabel(h),
+                                        query: query,
+                                        maxLines: 1,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(fontSize: 17),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      HighlightText(
+                                        _snippet(h),
+                                        query: query,
+                                        maxLines: 2,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(fontSize: 12.5),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                const SizedBox(height: 2),
-                                HighlightText(
-                                  _snippet(h),
-                                  query: query,
-                                  maxLines: 2,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 12.5),
-                                ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      ),
+                    ],
                   ),
           ),
         ],
@@ -169,6 +226,9 @@ class _Header extends StatelessWidget {
     required this.controller,
     required this.focus,
     required this.onChanged,
+    required this.onSubmitted,
+    required this.numeric,
+    required this.onToggleKeyboard,
     required this.onClear,
     required this.category,
     required this.categories,
@@ -181,6 +241,9 @@ class _Header extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focus;
   final ValueChanged<String> onChanged;
+  final ValueChanged<String> onSubmitted;
+  final bool numeric;
+  final VoidCallback onToggleKeyboard;
   final VoidCallback onClear;
   final String? category;
   final List<String> categories;
@@ -211,19 +274,33 @@ class _Header extends StatelessWidget {
                   children: [
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 14),
-                      child: Icon(Icons.search, color: Colors.black87, size: 26),
+                      child: Icon(
+                        Icons.search,
+                        color: Colors.black87,
+                        size: 26,
+                      ),
                     ),
                     Expanded(
                       child: TextField(
                         controller: controller,
                         focusNode: focus,
                         onChanged: onChanged,
+                        onSubmitted: onSubmitted,
+                        keyboardType: numeric
+                            ? TextInputType.number
+                            : TextInputType.text,
                         textInputAction: TextInputAction.search,
-                        style: const TextStyle(color: Colors.black87, fontSize: 18),
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 18,
+                        ),
                         cursorColor: Brand.azul,
                         decoration: const InputDecoration(
                           hintText: 'Número o texto',
-                          hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
+                          hintStyle: TextStyle(
+                            color: Colors.black54,
+                            fontSize: 18,
+                          ),
                           border: InputBorder.none,
                         ),
                       ),
@@ -234,6 +311,25 @@ class _Header extends StatelessWidget {
                         icon: const Icon(Icons.close, color: Colors.black87),
                         onPressed: onClear,
                       ),
+                    // Cambiar teclado: números ↔ letras.
+                    TextButton(
+                      onPressed: onToggleKeyboard,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Brand.azul,
+                        minimumSize: const Size(52, 40),
+                      ),
+                      child: Text(
+                        numeric ? 'abc' : '123',
+                        semanticsLabel: numeric
+                            ? 'Teclado de letras'
+                            : 'Teclado numérico',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
                   ],
                 ),
               ),
@@ -252,7 +348,11 @@ class _Header extends StatelessWidget {
                     isExpanded: true,
                     iconEnabledColor: Brand.azul,
                     dropdownColor: Brand.fondo,
-                    style: const TextStyle(color: Brand.azul, fontSize: 14, fontFamily: Brand.fuente),
+                    style: const TextStyle(
+                      color: Brand.azul,
+                      fontSize: 14,
+                      fontFamily: Brand.fuente,
+                    ),
                     alignment: Alignment.center,
                     items: [
                       const DropdownMenuItem<String?>(
@@ -283,7 +383,11 @@ class _Header extends StatelessWidget {
                       const Text('Buscar en:', style: onBlue),
                       _radio(null, 'Todos', true),
                       for (final h in hymnals)
-                        _radio(h.id, h.activo ? h.nombreCorto : '${h.nombreCorto} (próx.)', h.activo),
+                        _radio(
+                          h.id,
+                          h.activo ? h.nombreCorto : '${h.nombreCorto} (próx.)',
+                          h.activo,
+                        ),
                     ],
                   ),
                 ),
@@ -303,13 +407,18 @@ class _Header extends StatelessWidget {
           value: value,
           enabled: enabled,
           fillColor: WidgetStateProperty.resolveWith(
-            (s) => s.contains(WidgetState.disabled) ? Colors.white38 : Colors.white,
+            (s) => s.contains(WidgetState.disabled)
+                ? Colors.white38
+                : Colors.white,
           ),
           visualDensity: VisualDensity.compact,
         ),
         Text(
           label,
-          style: TextStyle(color: enabled ? Colors.white : Colors.white54, fontSize: 14),
+          style: TextStyle(
+            color: enabled ? Colors.white : Colors.white54,
+            fontSize: 14,
+          ),
         ),
       ],
     );

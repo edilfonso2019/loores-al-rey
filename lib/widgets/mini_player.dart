@@ -19,9 +19,11 @@ class MiniPlayer extends StatelessWidget {
     return Material(
       color: dark ? const Color(0xFF1F2A44) : Brand.fondoTarjeta,
       child: InkWell(
-        onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-          builder: (_) => HymnScreen(hymn: h, initialKind: player.kind),
-        )),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => HymnScreen(hymn: h, initialKind: player.kind),
+          ),
+        ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 6, 4, 6),
           child: Row(
@@ -53,12 +55,20 @@ class MiniPlayer extends StatelessWidget {
               if (player.loading)
                 const Padding(
                   padding: EdgeInsets.all(12),
-                  child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)),
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
                 )
               else
                 IconButton(
                   tooltip: player.playing ? 'Pausar' : 'Reproducir',
-                  icon: Icon(player.playing ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                  icon: Icon(
+                    player.playing
+                        ? Icons.pause_rounded
+                        : Icons.play_arrow_rounded,
+                  ),
                   onPressed: player.toggle,
                 ),
               IconButton(

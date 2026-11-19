@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../data/hymn_repository.dart';
 import '../models/hymn.dart';
@@ -35,7 +36,11 @@ class _HymnScreenState extends State<HymnScreen> {
     super.initState();
     _player = context.read<PlayerService>();
     _state = context.read<AppState>();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _state.pushHistory(_hymn.id));
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _state.pushHistory(_hymn.id),
+    );
+    // Mientras se canta, que la pantalla no se apague.
+    WakelockPlus.enable();
   }
 
   @override
@@ -44,6 +49,7 @@ class _HymnScreenState extends State<HymnScreen> {
     if (!_state.minimizedMode && _player.current != null && !_player.hasQueue) {
       _player.stop();
     }
+    WakelockPlus.disable();
     super.dispose();
   }
 
@@ -63,7 +69,9 @@ class _HymnScreenState extends State<HymnScreen> {
     }
     if (h.cita != null) buf.writeln('${h.versiculo ?? ''} ${h.cita}'.trim());
     buf.write('\n— App Loores al Rey');
-    SharePlus.instance.share(ShareParams(text: buf.toString(), subject: h.title));
+    SharePlus.instance.share(
+      ShareParams(text: buf.toString(), subject: h.title),
+    );
   }
 
   @override
@@ -100,7 +108,13 @@ class _HymnScreenState extends State<HymnScreen> {
                 case 'compartir':
                   _share();
                 case 'proyectar':
-                  Navigator.push(context, MaterialPageRoute<void>(builder: (_) => ProjectionScreen(hymn: h)));
+                  // La proyección apaga el wakelock al salir: se vuelve a activar.
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => ProjectionScreen(hymn: h),
+                    ),
+                  ).then((_) => WakelockPlus.enable());
                 case 'anterior':
                   _goTo(HymnRepository.instance.neighbor(h, -1));
                 case 'siguiente':
@@ -108,11 +122,41 @@ class _HymnScreenState extends State<HymnScreen> {
               }
             },
             itemBuilder: (_) => const [
-              PopupMenuItem(value: 'lista', child: ListTile(leading: Icon(Icons.playlist_add), title: Text('Agregar a lista de culto'))),
-              PopupMenuItem(value: 'compartir', child: ListTile(leading: Icon(Icons.share), title: Text('Compartir letra'))),
-              PopupMenuItem(value: 'proyectar', child: ListTile(leading: Icon(Icons.cast), title: Text('Modo proyección'))),
-              PopupMenuItem(value: 'anterior', child: ListTile(leading: Icon(Icons.skip_previous), title: Text('Himno anterior'))),
-              PopupMenuItem(value: 'siguiente', child: ListTile(leading: Icon(Icons.skip_next), title: Text('Himno siguiente'))),
+              PopupMenuItem(
+                value: 'lista',
+                child: ListTile(
+                  leading: Icon(Icons.playlist_add),
+                  title: Text('Agregar a lista de culto'),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'compartir',
+                child: ListTile(
+                  leading: Icon(Icons.share),
+                  title: Text('Compartir letra'),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'proyectar',
+                child: ListTile(
+                  leading: Icon(Icons.cast),
+                  title: Text('Modo proyección'),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'anterior',
+                child: ListTile(
+                  leading: Icon(Icons.skip_previous),
+                  title: Text('Himno anterior'),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'siguiente',
+                child: ListTile(
+                  leading: Icon(Icons.skip_next),
+                  title: Text('Himno siguiente'),
+                ),
+              ),
             ],
           ),
         ],
@@ -122,21 +166,30 @@ class _HymnScreenState extends State<HymnScreen> {
           Positioned.fill(
             child: showScore
                 ? ScoreView(key: ValueKey('pdf-${h.id}'), hymn: h)
-                : GestureDetector(
-                    // Deslizar a los lados: himno anterior / siguiente.
-                    onHorizontalDragEnd: (d) {
-                      final v = d.primaryVelocity ?? 0;
-                      if (v.abs() < 400) return;
-                      _goTo(HymnRepository.instance.neighbor(h, v < 0 ? 1 : -1));
-                    },
-                    child: _Lyrics(key: ValueKey('ly-${h.id}'), hymn: h, fontSize: state.fontSize, color: bg.foreground),
+                : _PinchToZoom(
+                    // Pellizcar con dos dedos: cambia el tamaño de la letra.
+                    onStart: () => state.fontSize,
+                    onScale: (base, scale) => state.setFontSize(base * scale),
+                    child: GestureDetector(
+                      // Deslizar a los lados: himno anterior / siguiente.
+                      onHorizontalDragEnd: (d) {
+                        final v = d.primaryVelocity ?? 0;
+                        if (v.abs() < 400) return;
+                        _goTo(
+                          HymnRepository.instance.neighbor(h, v < 0 ? 1 : -1),
+                        );
+                      },
+                      child: _Lyrics(
+                        key: ValueKey('ly-${h.id}'),
+                        hymn: h,
+                        fontSize: state.fontSize,
+                        color: bg.foreground,
+                        onNavigate: _goTo,
+                      ),
+                    ),
                   ),
           ),
-          Positioned(
-            left: 16,
-            bottom: 12,
-            child: _FavoriteButton(id: h.id),
-          ),
+          Positioned(left: 16, bottom: 12, child: _FavoriteButton(id: h.id)),
         ],
       ),
       bottomNavigationBar: basic
@@ -147,7 +200,10 @@ class _HymnScreenState extends State<HymnScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _PlayerBar(hymn: h, kind: _kind),
-                  _KindTabs(kind: _kind, onChanged: (k) => setState(() => _kind = k)),
+                  _KindTabs(
+                    kind: _kind,
+                    onChanged: (k) => setState(() => _kind = k),
+                  ),
                 ],
               ),
             ),
@@ -156,10 +212,17 @@ class _HymnScreenState extends State<HymnScreen> {
 }
 
 class _Lyrics extends StatelessWidget {
-  const _Lyrics({super.key, required this.hymn, required this.fontSize, this.color});
+  const _Lyrics({
+    super.key,
+    required this.hymn,
+    required this.fontSize,
+    this.color,
+    required this.onNavigate,
+  });
   final Hymn hymn;
   final double fontSize;
   final Color? color;
+  final ValueChanged<Hymn?> onNavigate;
 
   @override
   Widget build(BuildContext context) {
@@ -173,37 +236,84 @@ class _Lyrics extends StatelessWidget {
         children: [
           Text(
             hymn.title,
-            style: TextStyle(fontSize: fontSize + 2, fontWeight: FontWeight.w700, color: fg),
+            style: TextStyle(
+              fontSize: fontSize + 2,
+              fontWeight: FontWeight.w700,
+              color: fg,
+            ),
           ),
           if (cat.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 2),
-              child: Text(cat, style: TextStyle(fontSize: 13, color: fg.withValues(alpha: 0.6))),
+              child: Text(
+                cat,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: fg.withValues(alpha: 0.6),
+                ),
+              ),
             ),
           const SizedBox(height: 14),
-          for (final v in hymn.verses) ...[
-            if (v.isChorus)
+          for (final (i, v) in hymn.verses.indexed) ...[
+            // El coro completo solo la primera vez; después, una marca breve
+            // para no alargar la pantalla (en proyección sí se repite).
+            if (v.isChorus && i > 1)
+              Padding(
+                padding: const EdgeInsets.only(left: 18),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.replay_rounded,
+                      size: fontSize * 0.8,
+                      color: Brand.azulClaro,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Coro',
+                      style: body.copyWith(
+                        fontStyle: FontStyle.italic,
+                        color: fg.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (v.isChorus)
               Padding(
                 padding: const EdgeInsets.only(left: 18),
                 child: Text.rich(
-                  TextSpan(children: [
-                    TextSpan(
-                      text: 'Coro\n',
-                      style: TextStyle(fontSize: fontSize * 0.75, fontWeight: FontWeight.w700, color: Brand.azulClaro),
-                    ),
-                    TextSpan(text: v.text, style: body.copyWith(fontStyle: FontStyle.italic)),
-                  ]),
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: 'Coro\n',
+                        style: TextStyle(
+                          fontSize: fontSize * 0.75,
+                          fontWeight: FontWeight.w700,
+                          color: Brand.azulClaro,
+                        ),
+                      ),
+                      TextSpan(
+                        text: v.text,
+                        style: body.copyWith(fontStyle: FontStyle.italic),
+                      ),
+                    ],
+                  ),
                 ),
               )
             else
               Text.rich(
-                TextSpan(children: [
-                  TextSpan(
-                    text: '${v.number}  ',
-                    style: body.copyWith(fontWeight: FontWeight.w700, color: Brand.azulClaro),
-                  ),
-                  TextSpan(text: v.text, style: body),
-                ]),
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '${v.number}  ',
+                      style: body.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: Brand.azulClaro,
+                      ),
+                    ),
+                    TextSpan(text: v.text, style: body),
+                  ],
+                ),
               ),
             SizedBox(height: fontSize),
           ],
@@ -211,10 +321,19 @@ class _Lyrics extends StatelessWidget {
             const Divider(),
             const SizedBox(height: 8),
             Text(
-              [if (hymn.versiculo != null) '"${hymn.versiculo}"', if (hymn.cita != null) hymn.cita].join('\n'),
-              style: TextStyle(fontSize: fontSize * 0.8, fontStyle: FontStyle.italic, color: fg.withValues(alpha: 0.75)),
+              [
+                if (hymn.versiculo != null) '"${hymn.versiculo}"',
+                if (hymn.cita != null) hymn.cita,
+              ].join('\n'),
+              style: TextStyle(
+                fontSize: fontSize * 0.8,
+                fontStyle: FontStyle.italic,
+                color: fg.withValues(alpha: 0.75),
+              ),
             ),
           ],
+          const SizedBox(height: 16),
+          _NeighborButtons(hymn: hymn, onNavigate: onNavigate),
         ],
       ),
     );
@@ -241,7 +360,10 @@ class _FavoriteButton extends StatelessWidget {
         ),
         onPressed: () {
           context.read<AppState>().toggleFavorite(id);
-          showSnack(context, fav ? 'Quitado de favoritos' : 'Agregado a favoritos');
+          showSnack(
+            context,
+            fav ? 'Quitado de favoritos' : 'Agregado a favoritos',
+          );
         },
       ),
     );
@@ -281,12 +403,18 @@ class _PlayerBar extends StatelessWidget {
           if (isAudio)
             _RoundButton(
               tooltip: active && player.playing ? 'Pausar' : 'Reproducir',
-              icon: active && player.playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+              icon: active && player.playing
+                  ? Icons.pause_rounded
+                  : Icons.play_arrow_rounded,
               busy: active && player.loading,
               onPressed: missing ? null : () => player.play(hymn, kind),
             )
           else
-            const SizedBox(width: 48, height: 48, child: Icon(Icons.picture_as_pdf_rounded, color: Brand.azul)),
+            const SizedBox(
+              width: 48,
+              height: 48,
+              child: Icon(Icons.picture_as_pdf_rounded, color: Brand.azul),
+            ),
           const SizedBox(width: 8),
           Expanded(
             child: active && error == null
@@ -304,19 +432,32 @@ class _PlayerBar extends StatelessWidget {
                               fontSize: 12,
                               color: missing
                                   ? Brand.gris
-                                  : (error != null ? Theme.of(context).colorScheme.error : Brand.gris),
+                                  : (error != null
+                                        ? Theme.of(context).colorScheme.error
+                                        : Brand.gris),
                               fontStyle: missing ? FontStyle.italic : null,
                             ),
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text(tono, style: const TextStyle(fontSize: 11, color: Brand.gris)),
+                        Text(
+                          tono,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Brand.gris,
+                          ),
+                        ),
                       ],
                     ),
                   ),
           ),
           const SizedBox(width: 8),
-          _DownloadButton(hymn: hymn, kind: kind, media: media, enabled: !missing),
+          _DownloadButton(
+            hymn: hymn,
+            kind: kind,
+            media: media,
+            enabled: !missing,
+          ),
         ],
       ),
     );
@@ -350,10 +491,14 @@ class _Progress extends StatelessWidget {
               child: SizedBox(
                 height: 22,
                 child: Slider(
-                  value: max <= 0 ? 0 : pos.inMilliseconds.clamp(0, max).toDouble(),
+                  value: max <= 0
+                      ? 0
+                      : pos.inMilliseconds.clamp(0, max).toDouble(),
                   max: max <= 0 ? 1 : max,
                   activeColor: Brand.azul,
-                  onChanged: max <= 0 ? null : (v) => player.seek(Duration(milliseconds: v.round())),
+                  onChanged: max <= 0
+                      ? null
+                      : (v) => player.seek(Duration(milliseconds: v.round())),
                 ),
               ),
             ),
@@ -361,7 +506,10 @@ class _Progress extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
                 children: [
-                  Text(formatDuration(pos), style: const TextStyle(fontSize: 11)),
+                  Text(
+                    formatDuration(pos),
+                    style: const TextStyle(fontSize: 11),
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -372,8 +520,12 @@ class _Progress extends StatelessWidget {
                       style: const TextStyle(fontSize: 11, color: Brand.gris),
                     ),
                   ),
-                  if (tono != null) Text('$tono  ', style: const TextStyle(fontSize: 11)),
-                  Text(formatDuration(total), style: const TextStyle(fontSize: 11)),
+                  if (tono != null)
+                    Text('$tono  ', style: const TextStyle(fontSize: 11)),
+                  Text(
+                    formatDuration(total),
+                    style: const TextStyle(fontSize: 11),
+                  ),
                 ],
               ),
             ),
@@ -385,7 +537,12 @@ class _Progress extends StatelessWidget {
 }
 
 class _DownloadButton extends StatelessWidget {
-  const _DownloadButton({required this.hymn, required this.kind, required this.media, this.enabled = true});
+  const _DownloadButton({
+    required this.hymn,
+    required this.kind,
+    required this.media,
+    this.enabled = true,
+  });
   final Hymn hymn;
   final MediaKind kind;
   final MediaService media;
@@ -401,30 +558,48 @@ class _DownloadButton extends StatelessWidget {
         height: 48,
         child: Padding(
           padding: const EdgeInsets.all(10),
-          child: CircularProgressIndicator(value: progress == 0 ? null : progress, strokeWidth: 3),
+          child: CircularProgressIndicator(
+            value: progress == 0 ? null : progress,
+            strokeWidth: 3,
+          ),
         ),
       );
     }
     return _RoundButton(
-      tooltip: downloaded ? 'Descargado (quitar)' : 'Descargar ${kind.label.toLowerCase()}',
+      tooltip: downloaded
+          ? 'Descargado (quitar)'
+          : 'Descargar ${kind.label.toLowerCase()}',
       icon: downloaded ? Icons.download_done_rounded : Icons.download_rounded,
       filled: !downloaded,
-      onPressed: !enabled ? null : () async {
-        if (downloaded) {
-          final ok = await confirm(context, 'Quitar descarga',
-              '¿Borrar ${kind.label.toLowerCase()} del himno ${hymn.number} del teléfono?', ok: 'Borrar');
-          if (ok) await media.delete(hymn, kind);
-          return;
-        }
-        try {
-          await media.download(hymn, kind);
-          if (context.mounted) showSnack(context, '${kind.label} disponible sin conexión');
-        } on MediaNotAvailable catch (e) {
-          if (context.mounted) showSnack(context, e.message);
-        } catch (_) {
-          if (context.mounted) showSnack(context, 'No se pudo descargar. Revisa tu conexión.');
-        }
-      },
+      onPressed: !enabled
+          ? null
+          : () async {
+              if (downloaded) {
+                final ok = await confirm(
+                  context,
+                  'Quitar descarga',
+                  '¿Borrar ${kind.label.toLowerCase()} del himno ${hymn.number} del teléfono?',
+                  ok: 'Borrar',
+                );
+                if (ok) await media.delete(hymn, kind);
+                return;
+              }
+              try {
+                await media.download(hymn, kind);
+                if (context.mounted) {
+                  showSnack(context, '${kind.label} disponible sin conexión');
+                }
+              } on MediaNotAvailable catch (e) {
+                if (context.mounted) showSnack(context, e.message);
+              } catch (_) {
+                if (context.mounted) {
+                  showSnack(
+                    context,
+                    'No se pudo descargar. Revisa tu conexión.',
+                  );
+                }
+              }
+            },
     );
   }
 }
@@ -451,16 +626,24 @@ class _RoundButton extends StatelessWidget {
       child: Material(
         color: !filled
             ? Colors.transparent
-            : (onPressed == null ? Brand.gris.withValues(alpha: 0.5) : Brand.azul),
+            : (onPressed == null
+                  ? Brand.gris.withValues(alpha: 0.5)
+                  : Brand.azul),
         shape: const CircleBorder(),
         child: busy
             ? const Padding(
                 padding: EdgeInsets.all(13),
-                child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.white,
+                ),
               )
             : IconButton(
                 tooltip: tooltip,
-                icon: Icon(icon, color: filled ? Colors.white : Brand.azulClaro),
+                icon: Icon(
+                  icon,
+                  color: filled ? Colors.white : Brand.azulClaro,
+                ),
                 onPressed: onPressed,
               ),
       ),
@@ -504,13 +687,19 @@ class _KindTabs extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: k == kind
                             ? (dark ? Brand.azulClaro : Brand.azul)
-                            : (dark ? const Color(0xFF2A3550) : const Color(0xFFDADADA)),
-                        border: const Border(right: BorderSide(color: Colors.white, width: 1)),
+                            : (dark
+                                  ? const Color(0xFF2A3550)
+                                  : const Color(0xFFDADADA)),
+                        border: const Border(
+                          right: BorderSide(color: Colors.white, width: 1),
+                        ),
                       ),
                       child: Text(
                         _labels[k]!,
                         style: TextStyle(
-                          color: k == kind ? Colors.white : (dark ? Colors.white : Brand.azul),
+                          color: k == kind
+                              ? Colors.white
+                              : (dark ? Colors.white : Brand.azul),
                           fontSize: 14,
                         ),
                       ),
@@ -521,6 +710,97 @@ class _KindTabs extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Botones "anterior / siguiente" al final de la letra (también se puede
+/// deslizar a los lados, pero esto se descubre mejor).
+class _NeighborButtons extends StatelessWidget {
+  const _NeighborButtons({required this.hymn, required this.onNavigate});
+  final Hymn hymn;
+  final ValueChanged<Hymn?> onNavigate;
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = HymnRepository.instance;
+    final prev = repo.neighbor(hymn, -1);
+    final next = repo.neighbor(hymn, 1);
+    return Row(
+      children: [
+        if (prev != null)
+          TextButton.icon(
+            onPressed: () => onNavigate(prev),
+            icon: const Icon(Icons.chevron_left_rounded),
+            label: Text('#${prev.number}'),
+          ),
+        const Spacer(),
+        if (next != null)
+          TextButton.icon(
+            onPressed: () => onNavigate(next),
+            iconAlignment: IconAlignment.end,
+            icon: const Icon(Icons.chevron_right_rounded),
+            label: Text('#${next.number}'),
+          ),
+      ],
+    );
+  }
+}
+
+/// Detecta el pellizco con dos dedos sin competir con el desplazamiento de
+/// la lista (usa eventos crudos, fuera del "gesture arena").
+class _PinchToZoom extends StatefulWidget {
+  const _PinchToZoom({
+    required this.child,
+    required this.onStart,
+    required this.onScale,
+  });
+  final Widget child;
+  final double Function() onStart;
+  final void Function(double base, double scale) onScale;
+
+  @override
+  State<_PinchToZoom> createState() => _PinchToZoomState();
+}
+
+class _PinchToZoomState extends State<_PinchToZoom> {
+  final Map<int, Offset> _pointers = {};
+  double? _startDistance;
+  double _base = 18;
+
+  double get _distance {
+    final p = _pointers.values.take(2).toList();
+    return (p[0] - p[1]).distance;
+  }
+
+  void _reset() {
+    _startDistance = _pointers.length >= 2 ? _distance : null;
+    if (_startDistance != null) _base = widget.onStart();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerDown: (e) {
+        _pointers[e.pointer] = e.localPosition;
+        _reset();
+      },
+      onPointerMove: (e) {
+        _pointers[e.pointer] = e.localPosition;
+        final start = _startDistance;
+        if (start != null && start > 0 && _pointers.length >= 2) {
+          widget.onScale(_base, _distance / start);
+        }
+      },
+      onPointerUp: (e) {
+        _pointers.remove(e.pointer);
+        _reset();
+      },
+      onPointerCancel: (e) {
+        _pointers.remove(e.pointer);
+        _reset();
+      },
+      child: widget.child,
     );
   }
 }

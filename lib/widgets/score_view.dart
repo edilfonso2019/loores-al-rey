@@ -38,9 +38,15 @@ class _ScoreViewState extends State<ScoreView> {
         doc = PdfDocument.openFile(local.path);
       } else {
         final url = media.remoteUrl(widget.hymn, MediaKind.partitura);
-        if (url == null) throw const MediaNotAvailable('Partitura aún no disponible.');
-        final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 25));
-        if (res.statusCode == 404) throw const MediaNotAvailable('Partitura aún no disponible.');
+        if (url == null) {
+          throw const MediaNotAvailable('Partitura aún no disponible.');
+        }
+        final res = await http
+            .get(Uri.parse(url))
+            .timeout(const Duration(seconds: 25));
+        if (res.statusCode == 404) {
+          throw const MediaNotAvailable('Partitura aún no disponible.');
+        }
         if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
         doc = PdfDocument.openData(Uint8List.fromList(res.bodyBytes));
       }
@@ -54,11 +60,17 @@ class _ScoreViewState extends State<ScoreView> {
         _loading = false;
       });
     } on MediaNotAvailable catch (e) {
-      if (mounted) setState(() { _error = e.message; _loading = false; });
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+          _loading = false;
+        });
+      }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _error = 'No se pudo cargar la partitura.\nRevisa tu conexión o descárgala para verla sin internet.';
+          _error =
+              'No se pudo cargar la partitura.\nRevisa tu conexión o descárgala para verla sin internet.';
           _loading = false;
         });
       }
@@ -89,6 +101,9 @@ class _ScoreViewState extends State<ScoreView> {
         ),
       );
     }
-    return PdfViewPinch(controller: _controller!, backgroundDecoration: const BoxDecoration(color: Colors.white));
+    return PdfViewPinch(
+      controller: _controller!,
+      backgroundDecoration: const BoxDecoration(color: Colors.white),
+    );
   }
 }

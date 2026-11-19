@@ -35,17 +35,25 @@ class FavoritesScreen extends StatelessWidget {
             indicatorColor: Brand.dorado,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-            tabs: [Tab(text: 'Favoritos'), Tab(text: 'Listas'), Tab(text: 'Recientes')],
+            tabs: [
+              Tab(text: 'Favoritos'),
+              Tab(text: 'Listas'),
+              Tab(text: 'Recientes'),
+            ],
           ),
         ),
-        body: const TabBarView(children: [_FavoritesTab(), _PlaylistsTab(), _HistoryTab()]),
+        body: const TabBarView(
+          children: [_FavoritesTab(), _PlaylistsTab(), _HistoryTab()],
+        ),
       ),
     );
   }
 }
 
 void _open(BuildContext context, Hymn h) {
-  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => HymnScreen(hymn: h)));
+  Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (_) => HymnScreen(hymn: h)));
 }
 
 class _FavoritesTab extends StatelessWidget {
@@ -57,7 +65,10 @@ class _FavoritesTab extends StatelessWidget {
     final repo = HymnRepository.instance;
     final items = [for (final id in state.favorites) ?repo.byId(id)];
     if (items.isEmpty) {
-      return const _Empty(icon: Icons.favorite_border, text: 'Aún no tienes favoritos.\nToca el corazón dentro de un himno.');
+      return const _Empty(
+        icon: Icons.favorite_border,
+        text: 'Aún no tienes favoritos.\nToca el corazón dentro de un himno.',
+      );
     }
     return ReorderableListView.builder(
       itemCount: items.length,
@@ -73,15 +84,24 @@ class _FavoritesTab extends StatelessWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ReorderableDragStartListener(index: i, child: const Icon(Icons.drag_handle)),
+              ReorderableDragStartListener(
+                index: i,
+                child: const Icon(Icons.drag_handle),
+              ),
               PopupMenuButton<String>(
                 onSelected: (v) {
                   if (v == 'lista') showAddToPlaylist(ctx, h);
                   if (v == 'quitar') state.toggleFavorite(h.id);
                 },
                 itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'lista', child: Text('Agregar a lista de culto')),
-                  PopupMenuItem(value: 'quitar', child: Text('Quitar de favoritos')),
+                  PopupMenuItem(
+                    value: 'lista',
+                    child: Text('Agregar a lista de culto'),
+                  ),
+                  PopupMenuItem(
+                    value: 'quitar',
+                    child: Text('Quitar de favoritos'),
+                  ),
                 ],
               ),
             ],
@@ -100,7 +120,12 @@ class _HistoryTab extends StatelessWidget {
     final state = context.watch<AppState>();
     final repo = HymnRepository.instance;
     final items = [for (final id in state.history) ?repo.byId(id)];
-    if (items.isEmpty) return const _Empty(icon: Icons.history, text: 'Aquí verás los himnos que abras.');
+    if (items.isEmpty) {
+      return const _Empty(
+        icon: Icons.history,
+        text: 'Aquí verás los himnos que abras.',
+      );
+    }
     return ListView(
       children: [
         for (final h in items)
@@ -110,7 +135,10 @@ class _HistoryTab extends StatelessWidget {
             subtitle: Text(hymnalName(h), style: const TextStyle(fontSize: 11)),
             onTap: () => _open(context, h),
           ),
-        TextButton(onPressed: state.clearHistory, child: const Text('Borrar historial')),
+        TextButton(
+          onPressed: state.clearHistory,
+          child: const Text('Borrar historial'),
+        ),
       ],
     );
   }
@@ -130,12 +158,19 @@ class _PlaylistsTab extends StatelessWidget {
         icon: const Icon(Icons.add),
         label: const Text('Nueva lista'),
         onPressed: () async {
-          final name = await promptText(context, title: 'Nueva lista de culto', hint: 'Ej. Culto sábado 15');
+          final name = await promptText(
+            context,
+            title: 'Nueva lista de culto',
+            hint: 'Ej. Culto sábado 15',
+          );
           if (name != null) state.createPlaylist(name);
         },
       ),
       body: state.playlists.isEmpty
-          ? const _Empty(icon: Icons.queue_music, text: 'Crea listas de culto para reproducir himnos seguidos.')
+          ? const _Empty(
+              icon: Icons.queue_music,
+              text: 'Crea listas de culto para reproducir himnos seguidos.',
+            )
           : ListView(
               padding: const EdgeInsets.only(bottom: 88),
               children: [
@@ -147,7 +182,9 @@ class _PlaylistsTab extends StatelessWidget {
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute<void>(builder: (_) => PlaylistScreen(playlistId: pl.id)),
+                      MaterialPageRoute<void>(
+                        builder: (_) => PlaylistScreen(playlistId: pl.id),
+                      ),
                     ),
                   ),
               ],
@@ -167,7 +204,11 @@ class PlaylistScreen extends StatelessWidget {
     var i = 1;
     for (final id in pl.items) {
       final h = repo.byId(id);
-      if (h != null) b.writeln('${i++}. #${h.number} (${repo.hymnal(h.book)?.sigla}) ${h.title}');
+      if (h != null) {
+        b.writeln(
+          '${i++}. #${h.number} (${repo.hymnal(h.book)?.sigla}) ${h.title}',
+        );
+      }
     }
     b.write('\n— App Loores al Rey');
     return b.toString();
@@ -181,7 +222,9 @@ class PlaylistScreen extends StatelessWidget {
     final repo = HymnRepository.instance;
     final hymns = [for (final id in pl.items) repo.byId(id)];
     final player = context.watch<PlayerService>();
-    final playingHere = player.queueName == pl.name && player.hasQueue ? player.queueIndex : -1;
+    final playingHere = player.queueName == pl.name && player.hasQueue
+        ? player.queueIndex
+        : -1;
     return Scaffold(
       bottomNavigationBar: const SafeArea(top: false, child: MiniPlayer()),
       appBar: AppBar(
@@ -190,15 +233,27 @@ class PlaylistScreen extends StatelessWidget {
           IconButton(
             tooltip: 'Compartir',
             icon: const Icon(Icons.share),
-            onPressed: () => SharePlus.instance.share(ShareParams(text: _shareText(pl), subject: pl.name)),
+            onPressed: () => SharePlus.instance.share(
+              ShareParams(text: _shareText(pl), subject: pl.name),
+            ),
           ),
           PopupMenuButton<String>(
             onSelected: (v) async {
               if (v == 'renombrar') {
-                final n = await promptText(context, title: 'Renombrar', initial: pl.name);
+                final n = await promptText(
+                  context,
+                  title: 'Renombrar',
+                  initial: pl.name,
+                );
                 if (n != null) state.renamePlaylist(pl, n);
               } else if (v == 'borrar') {
-                if (await confirm(context, 'Borrar lista', '¿Borrar "${pl.name}"?', ok: 'Borrar') && context.mounted) {
+                if (await confirm(
+                      context,
+                      'Borrar lista',
+                      '¿Borrar "${pl.name}"?',
+                      ok: 'Borrar',
+                    ) &&
+                    context.mounted) {
                   state.deletePlaylist(pl);
                   Navigator.pop(context);
                 }
@@ -218,10 +273,16 @@ class PlaylistScreen extends StatelessWidget {
               foregroundColor: Colors.white,
               icon: const Icon(Icons.play_arrow_rounded),
               label: const Text('Reproducir seguido'),
-              onPressed: () => context.read<PlayerService>().playQueue(pl.items, name: pl.name),
+              onPressed: () => context.read<PlayerService>().playQueue(
+                pl.items,
+                name: pl.name,
+              ),
             ),
       body: pl.items.isEmpty
-          ? const _Empty(icon: Icons.playlist_add, text: 'Lista vacía.\nAgrega himnos desde el menú ⋮ de un himno.')
+          ? const _Empty(
+              icon: Icons.playlist_add,
+              text: 'Lista vacía.\nAgrega himnos desde el menú ⋮ de un himno.',
+            )
           : ReorderableListView.builder(
               padding: const EdgeInsets.only(bottom: 88),
               itemCount: pl.items.length,
@@ -241,16 +302,36 @@ class PlaylistScreen extends StatelessWidget {
                   child: ListTile(
                     selected: i == playingHere,
                     leading: CircleAvatar(
-                      backgroundColor: i == playingHere ? Brand.dorado : Brand.azul,
-                      foregroundColor: i == playingHere ? Brand.azul : Colors.white,
+                      backgroundColor: i == playingHere
+                          ? Brand.dorado
+                          : Brand.azul,
+                      foregroundColor: i == playingHere
+                          ? Brand.azul
+                          : Colors.white,
                       child: i == playingHere
                           ? const Icon(Icons.volume_up_rounded, size: 20)
                           : Text('${i + 1}'),
                     ),
-                    title: Text(h == null ? pl.items[i] : '#${h.number} - ${h.title}'),
-                    subtitle: h == null ? null : Text(hymnalName(h), style: const TextStyle(fontSize: 11)),
-                    onTap: h == null ? null : () => ctx.read<PlayerService>().playQueue(pl.items, index: i, name: pl.name),
-                    trailing: ReorderableDragStartListener(index: i, child: const Icon(Icons.drag_handle)),
+                    title: Text(
+                      h == null ? pl.items[i] : '#${h.number} - ${h.title}',
+                    ),
+                    subtitle: h == null
+                        ? null
+                        : Text(
+                            hymnalName(h),
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                    onTap: h == null
+                        ? null
+                        : () => ctx.read<PlayerService>().playQueue(
+                            pl.items,
+                            index: i,
+                            name: pl.name,
+                          ),
+                    trailing: ReorderableDragStartListener(
+                      index: i,
+                      child: const Icon(Icons.drag_handle),
+                    ),
                   ),
                 );
               },
@@ -266,16 +347,20 @@ class _Empty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 52, color: Brand.gris),
-              const SizedBox(height: 12),
-              Text(text, textAlign: TextAlign.center, style: const TextStyle(color: Brand.gris)),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 52, color: Brand.gris),
+          const SizedBox(height: 12),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Brand.gris),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }

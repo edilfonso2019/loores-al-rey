@@ -44,8 +44,8 @@ class DownloadedItem {
 /// Archivos en `<documentos>/descargas/<himnario>/<tipo>/<n>.<ext>`.
 class MediaService extends ChangeNotifier {
   MediaService({http.Client? client, Future<Directory> Function()? baseDir})
-      : _client = client ?? http.Client(),
-        _baseDir = baseDir ?? getApplicationDocumentsDirectory;
+    : _client = client ?? http.Client(),
+      _baseDir = baseDir ?? getApplicationDocumentsDirectory;
 
   final http.Client _client;
   final Future<Directory> Function() _baseDir;
@@ -123,10 +123,10 @@ class MediaService extends ChangeNotifier {
 
   /// Mensaje para recursos que el servidor aún no tiene (404).
   static String notAvailableMessage(Hymn h, MediaKind k) => switch (k) {
-        MediaKind.cantado => 'Pista cantada aún no disponible.',
-        MediaKind.instrumental => 'Pista instrumental aún no disponible.',
-        MediaKind.partitura => 'Partitura aún no disponible.',
-      };
+    MediaKind.cantado => 'Pista cantada aún no disponible.',
+    MediaKind.instrumental => 'Pista instrumental aún no disponible.',
+    MediaKind.partitura => 'Partitura aún no disponible.',
+  };
 
   /// true = existe, false = el servidor no la tiene (404), null = sin
   /// comprobar o sin conexión.
@@ -148,7 +148,9 @@ class MediaService extends ChangeNotifier {
           _available[id] = false;
           return false;
         }
-        final res = await _client.head(Uri.parse(url)).timeout(const Duration(seconds: 10));
+        final res = await _client
+            .head(Uri.parse(url))
+            .timeout(const Duration(seconds: 10));
         if (res.statusCode == 200) _available[id] = true;
         if (res.statusCode == 404) _available[id] = false;
         return _available[id];
@@ -166,7 +168,11 @@ class MediaService extends ChangeNotifier {
   /// Comprueba la disponibilidad una sola vez por sesión (para la UI).
   void prefetchAvailability(Hymn h, MediaKind k) {
     final id = key(h, k);
-    if (isDownloaded(h, k) || _available.containsKey(id) || !_prefetched.add(id)) return;
+    if (isDownloaded(h, k) ||
+        _available.containsKey(id) ||
+        !_prefetched.add(id)) {
+      return;
+    }
     Future.microtask(() => checkAvailable(h, k));
   }
 
@@ -186,11 +192,15 @@ class MediaService extends ChangeNotifier {
 
   Future<File> _download(Hymn h, MediaKind k) async {
     if (!canDownload) {
-      throw const MediaNotAvailable('Las descargas no están disponibles en este dispositivo.');
+      throw const MediaNotAvailable(
+        'Las descargas no están disponibles en este dispositivo.',
+      );
     }
     final url = remoteUrl(h, k);
     if (url == null) {
-      throw const MediaNotAvailable('Este himnario aún no tiene material en el servidor.');
+      throw const MediaNotAvailable(
+        'Este himnario aún no tiene material en el servidor.',
+      );
     }
     final id = key(h, k);
     final file = _fileFor(h, k);
@@ -215,7 +225,9 @@ class MediaService extends ChangeNotifier {
       var lastNotify = DateTime.now();
       try {
         // Si el servidor deja de enviar datos 30 s, se corta.
-        await for (final chunk in res.stream.timeout(const Duration(seconds: 30))) {
+        await for (final chunk in res.stream.timeout(
+          const Duration(seconds: 30),
+        )) {
           sink.add(chunk);
           received += chunk.length;
           if (total > 0 &&
@@ -260,10 +272,14 @@ class MediaService extends ChangeNotifier {
       final parts = k.split('-');
       if (parts.length != 3) continue;
       final h = repo.find(parts[0], int.tryParse(parts[1]) ?? -1);
-      final kind = MediaKind.values.where((m) => m.name == parts[2]).firstOrNull;
+      final kind = MediaKind.values
+          .where((m) => m.name == parts[2])
+          .firstOrNull;
       if (h == null || kind == null) continue;
       final f = _fileFor(h, kind);
-      if (await f.exists()) out.add(DownloadedItem(h, kind, f, await f.length()));
+      if (await f.exists()) {
+        out.add(DownloadedItem(h, kind, f, await f.length()));
+      }
     }
     out.sort((a, b) {
       final c = a.hymn.book.compareTo(b.hymn.book);
@@ -275,7 +291,9 @@ class MediaService extends ChangeNotifier {
   }
 
   Future<void> deleteAll() async {
-    if (_root != null && await _root!.exists()) await _root!.delete(recursive: true);
+    if (_root != null && await _root!.exists()) {
+      await _root!.delete(recursive: true);
+    }
     _downloaded.clear();
     notifyListeners();
   }

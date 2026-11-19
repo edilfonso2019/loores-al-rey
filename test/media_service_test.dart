@@ -19,22 +19,29 @@ void main() {
 
   /// Servidor falso: solo existen el instrumental y la partitura.
   MediaService service() => MediaService(
-        baseDir: () async => tmp,
-        client: MockClient((req) async {
-          final ok = !req.url.path.contains('cantado');
-          if (!ok) return http.Response('no', 404);
-          return http.Response.bytes(List.filled(1000, 7), 200,
-              headers: {'content-length': '1000'});
-        }),
+    baseDir: () async => tmp,
+    client: MockClient((req) async {
+      final ok = !req.url.path.contains('cantado');
+      if (!ok) return http.Response('no', 404);
+      return http.Response.bytes(
+        List.filled(1000, 7),
+        200,
+        headers: {'content-length': '1000'},
       );
+    }),
+  );
 
   test('URLs del servidor por himnario', () {
     final m = service();
     final h = repo.find('clasico', 131)!;
-    expect(m.remoteUrl(h, MediaKind.instrumental),
-        'http://192.241.144.242/pista_instrumental/himno_instrumental_131.mp3');
-    expect(m.remoteUrl(h, MediaKind.partitura),
-        'http://192.241.144.242/partitura/himno_partitura_131.pdf');
+    expect(
+      m.remoteUrl(h, MediaKind.instrumental),
+      'http://192.241.144.242/pista_instrumental/himno_instrumental_131.mp3',
+    );
+    expect(
+      m.remoteUrl(h, MediaKind.partitura),
+      'http://192.241.144.242/partitura/himno_partitura_131.pdf',
+    );
   });
 
   test('detecta pistas que aún no existen (404)', () async {
@@ -44,7 +51,10 @@ void main() {
     expect(await m.checkAvailable(h, MediaKind.cantado), isFalse);
     expect(m.availability(h, MediaKind.cantado), isFalse);
     expect(await m.checkAvailable(h, MediaKind.instrumental), isTrue);
-    await expectLater(m.download(h, MediaKind.cantado), throwsA(isA<MediaNotAvailable>()));
+    await expectLater(
+      m.download(h, MediaKind.cantado),
+      throwsA(isA<MediaNotAvailable>()),
+    );
   });
 
   test('descarga, lista y borra archivos offline', () async {

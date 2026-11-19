@@ -18,7 +18,10 @@ void main() {
 
   test('busca por número, título y letra sin tildes', () {
     expect(repo.search('131').first.number, 131);
-    expect(repo.search('en cristo hallo').first.title.toLowerCase(), contains('cristo'));
+    expect(
+      repo.search('en cristo hallo').first.title.toLowerCase(),
+      contains('cristo'),
+    );
     expect(repo.search('Hosánna'), isNotEmpty);
     expect(repo.search('xyzxyz'), isEmpty);
   });

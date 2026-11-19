@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../services/player_service.dart';
@@ -46,22 +47,30 @@ class ShellScreen extends StatelessWidget {
     final nav = context.watch<NavController>();
     // El mini reproductor aparece siempre que haya algo cargado, para no
     // dejar música sonando sin controles (Inicio lo muestra por su cuenta).
-    final showMini = context.select<PlayerService, bool>((p) => p.current != null);
+    final showMini = context.select<PlayerService, bool>(
+      (p) => p.current != null,
+    );
     return PopScope(
       canPop: nav.index == 0,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) nav.go(0);
       },
-      child: Scaffold(
-        // En Inicio, las esquinas redondeadas de la barra dejan ver el azul.
-        backgroundColor: nav.index == 0 ? Brand.azul : null,
-        body: IndexedStack(index: nav.index, children: _tabs),
-        bottomNavigationBar: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (showMini && nav.index != 0) const MiniPlayer(),
-            _BottomBar(index: nav.index, onTap: nav.go),
-          ],
+      // El buscador no tiene AppBar: se fija aquí el estilo de las barras.
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: AppTheme.overlay(
+          dark: Theme.of(context).brightness == Brightness.dark,
+        ),
+        child: Scaffold(
+          // En Inicio, las esquinas redondeadas de la barra dejan ver el azul.
+          backgroundColor: nav.index == 0 ? Brand.azul : null,
+          body: IndexedStack(index: nav.index, children: _tabs),
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (showMini && nav.index != 0) const MiniPlayer(),
+              _BottomBar(index: nav.index, onTap: nav.go),
+            ],
+          ),
         ),
       ),
     );
@@ -109,7 +118,9 @@ class _BottomBar extends StatelessWidget {
                           Icon(
                             _items[i].$1,
                             size: 28,
-                            color: i == index ? (dark ? Brand.azulClaro : Brand.azul) : fg,
+                            color: i == index
+                                ? (dark ? Brand.azulClaro : Brand.azul)
+                                : fg,
                           ),
                           const SizedBox(height: 4),
                           AnimatedContainer(
