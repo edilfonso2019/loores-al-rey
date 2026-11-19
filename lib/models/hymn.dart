@@ -11,6 +11,9 @@ class Hymnal {
   final List<Hymn> himnos;
   final ServerConfig? servidor;
 
+  /// Agrupación de temáticas para el índice (opcional en el JSON).
+  final List<Section> secciones;
+
   const Hymnal({
     required this.id,
     required this.nombre,
@@ -18,6 +21,7 @@ class Hymnal {
     required this.categorias,
     required this.himnos,
     this.servidor,
+    this.secciones = const [],
   });
 
   /// Letra corta para listas: "(C)" para Clásico, "(CG)" para CG.
@@ -42,8 +46,53 @@ class Hymnal {
       servidor: servidorJson != null
           ? ServerConfig.fromJson(servidorJson)
           : kServidores[id],
+      secciones: (json['secciones'] as List? ?? const [])
+          .map((e) => Section.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
+}
+
+/// Sección del índice: agrupa las temáticas [desde]..[hasta] (índices de
+/// `categorias`, inclusive). Ej. "Jesucristo" agrupa "Su primer advenimiento"…
+class Section {
+  final String nombre;
+  final int desde;
+  final int hasta;
+  const Section({
+    required this.nombre,
+    required this.desde,
+    required this.hasta,
+  });
+
+  factory Section.fromJson(Map<String, dynamic> json) => Section(
+    nombre: json['nombre'] as String,
+    desde: json['desde'] as int,
+    hasta: json['hasta'] as int,
+  );
+}
+
+/// Una temática con sus himnos (para el índice).
+class Topic {
+  final int index;
+  final String name;
+  final List<Hymn> hymns;
+  const Topic({required this.index, required this.name, required this.hymns});
+
+  int get first => hymns.first.number;
+  int get last => hymns.last.number;
+
+  /// "1–24" o "512" si es uno solo.
+  String get range => first == last ? '$first' : '$first–$last';
+}
+
+/// Grupo del índice: una sección y sus temáticas.
+class TopicGroup {
+  final String? name; // null = sin secciones definidas
+  final List<Topic> topics;
+  const TopicGroup({required this.name, required this.topics});
+
+  int get hymnCount => topics.fold(0, (a, t) => a + t.hymns.length);
 }
 
 /// Un himno. `estrofas` en orden; `coro` (si existe) se canta después de

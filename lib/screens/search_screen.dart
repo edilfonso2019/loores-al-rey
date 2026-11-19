@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import 'hymn_screen.dart';
 import 'shell_screen.dart';
+import 'topics_screen.dart';
 
 /// Buscador (Figma 2487:345): número o texto, temática y himnario.
 class SearchScreen extends StatefulWidget {
@@ -349,46 +350,73 @@ class _Header extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
-              // Temática
-              Container(
-                // 44 px: área táctil cómoda sin perder el aspecto de "píldora".
-                height: 44,
-                padding: const EdgeInsets.symmetric(horizontal: Space.m),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD0D3DA),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String?>(
-                    value: category,
-                    isExpanded: true,
-                    iconEnabledColor: Brand.azul,
-                    dropdownColor: Brand.fondo,
-                    style: const TextStyle(
-                      color: Brand.azul,
-                      fontSize: 14,
-                      fontFamily: Brand.fuente,
-                    ),
-                    alignment: Alignment.center,
-                    items: [
-                      const DropdownMenuItem<String?>(
-                        value: null,
-                        alignment: Alignment.center,
-                        child: Text('Temática (todos)'),
+              const SizedBox(height: Space.s),
+              // Temática: filtro rápido + acceso al índice completo.
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      // 44 px: área táctil cómoda sin perder el aspecto de "píldora".
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: Space.m),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD0D3DA),
+                        borderRadius: BorderRadius.circular(22),
                       ),
-                      for (final c in categories)
-                        DropdownMenuItem<String?>(
-                          value: c,
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String?>(
+                          value: category,
+                          isExpanded: true,
+                          iconEnabledColor: Brand.azul,
+                          dropdownColor: Brand.fondo,
+                          style: const TextStyle(
+                            color: Brand.azul,
+                            fontSize: FontSizes.small,
+                            fontFamily: Brand.fuente,
+                          ),
                           alignment: Alignment.center,
-                          child: Text(c, overflow: TextOverflow.ellipsis),
+                          items: [
+                            const DropdownMenuItem<String?>(
+                              value: null,
+                              alignment: Alignment.center,
+                              child: Text('Temática (todos)'),
+                            ),
+                            for (final c in categories)
+                              DropdownMenuItem<String?>(
+                                value: c,
+                                alignment: Alignment.center,
+                                child: Text(c, overflow: TextOverflow.ellipsis),
+                              ),
+                          ],
+                          onChanged: onCategory,
                         ),
-                    ],
-                    onChanged: onCategory,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: Space.xs),
+                  SizedBox(
+                    height: 44,
+                    child: FilledButton.tonalIcon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFD0D3DA),
+                        foregroundColor: Brand.azul,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Space.s,
+                        ),
+                      ),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => TopicsScreen(book: book ?? 'clasico'),
+                        ),
+                      ),
+                      icon: const Icon(Icons.list_alt_rounded, size: 20),
+                      label: const Text('Índice'),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: Space.xxs),
               // Buscar en: Todos / Clásico / CG
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,

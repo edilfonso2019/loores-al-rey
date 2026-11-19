@@ -110,6 +110,42 @@ class HymnRepository {
     return [...byNumber, ...byTitle, ...byText];
   }
 
+  /// Índice por temática de [book]: secciones con sus temáticas y himnos.
+  /// Omite temáticas sin himnos. Si el JSON no trae `secciones`, devuelve
+  /// un solo grupo sin nombre.
+  List<TopicGroup> topicIndex(String book) {
+    final hymnal = _hymnals[book];
+    if (hymnal == null) return const [];
+    final byCat = <int, List<Hymn>>{};
+    for (final h in hymnal.himnos) {
+      final c = h.categoryIndex;
+      if (c != null) (byCat[c] ??= []).add(h);
+    }
+    Topic? topic(int i) {
+      final hymns = byCat[i];
+      if (hymns == null || hymns.isEmpty) return null;
+      return Topic(index: i, name: hymnal.categorias[i], hymns: hymns);
+    }
+
+    if (hymnal.secciones.isEmpty) {
+      return [
+        TopicGroup(
+          name: null,
+          topics: [
+            for (var i = 0; i < hymnal.categorias.length; i++) ?topic(i),
+          ],
+        ),
+      ];
+    }
+    return [
+      for (final s in hymnal.secciones)
+        TopicGroup(
+          name: s.nombre,
+          topics: [for (var i = s.desde; i <= s.hasta; i++) ?topic(i)],
+        ),
+    ].where((g) => g.topics.isNotEmpty).toList();
+  }
+
   /// Temáticas disponibles para [book] (o la unión de los activos si es null).
   List<String> categories({String? book}) {
     final src = book == null ? activeHymnals : [?_hymnals[book]];

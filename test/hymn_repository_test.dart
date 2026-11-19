@@ -48,4 +48,23 @@ void main() {
     expect(repo.byId('clasico-131')?.number, 131);
     expect(repo.byId('malformado'), isNull);
   });
+
+  test('índice por temática: secciones completas y rangos', () {
+    final groups = repo.topicIndex('clasico');
+    expect(groups.first.name, 'Adoración');
+    expect(groups.first.topics.first.name, 'Adoración y alabanza');
+    expect(groups.first.topics.first.range, '1–24');
+    // Todos los himnos aparecen exactamente una vez.
+    final total = groups.fold<int>(0, (a, g) => a + g.hymnCount);
+    expect(total, repo.byBook('clasico').length);
+    final jesus = groups.firstWhere((g) => g.name == 'Jesucristo');
+    expect(
+      jesus.topics.map((t) => t.name),
+      contains('Su segundo advenimiento'),
+    );
+  });
+
+  test('índice de un himnario vacío (CG) no falla', () {
+    expect(repo.topicIndex('cg').every((g) => g.topics.isEmpty), isTrue);
+  });
 }

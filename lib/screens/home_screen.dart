@@ -10,6 +10,7 @@ import '../widgets/common.dart';
 import '../widgets/mini_player.dart';
 import 'hymn_screen.dart';
 import 'shell_screen.dart';
+import 'topics_screen.dart';
 
 /// Inicio (Figma 2415:988): foto del violín, logo y botones de himnario.
 class HomeScreen extends StatelessWidget {
@@ -44,7 +45,9 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: Space.l),
+                    const _TopicsCard(),
+                    const SizedBox(height: Space.s),
                     const _ContinueSection(),
                     const SizedBox(height: 16),
                   ],
@@ -199,7 +202,7 @@ class _ContinueSection extends StatelessWidget {
     if (hymns.isEmpty) return const SizedBox.shrink();
     final last = hymns.first;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: Space.gutter + Space.xxs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -210,11 +213,16 @@ class _ContinueSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               onTap: () => _open(context, last),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                padding: const EdgeInsets.fromLTRB(
+                  Space.m,
+                  Space.s,
+                  Space.xs,
+                  Space.s,
+                ),
                 child: Row(
                   children: [
                     const Icon(Icons.history_rounded, color: Brand.dorado),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: Space.s),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,7 +231,7 @@ class _ContinueSection extends StatelessWidget {
                             'Continuar donde quedaste',
                             style: TextStyle(
                               color: Colors.white70,
-                              fontSize: 12,
+                              fontSize: FontSizes.caption,
                             ),
                           ),
                           Text(
@@ -232,7 +240,7 @@ class _ContinueSection extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 16,
+                              fontSize: FontSizes.body,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -249,12 +257,15 @@ class _ContinueSection extends StatelessWidget {
             ),
           ),
           if (hymns.length > 1) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: Space.s),
             const Text(
               'Recientes',
-              style: TextStyle(color: Colors.white70, fontSize: 12),
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: FontSizes.caption,
+              ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: Space.xs),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -282,6 +293,83 @@ class _ContinueSection extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Acceso al índice por temática del primer himnario activo.
+class _TopicsCard extends StatelessWidget {
+  const _TopicsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = HymnRepository.instance;
+    final active = repo.activeHymnals;
+    if (active.isEmpty) return const SizedBox.shrink();
+    final book = active.first;
+    final groups = repo.topicIndex(book.id);
+    final topics = groups.fold<int>(0, (a, g) => a + g.topics.length);
+    final examples = groups
+        .where((g) => g.name != null)
+        .take(3)
+        .map((g) => g.name!)
+        .join(', ');
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Space.gutter + Space.xxs),
+      child: Material(
+        color: Colors.white.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(Space.m),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(Space.m),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (_) => TopicsScreen(book: book.id),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Space.m,
+              Space.s,
+              Space.xs,
+              Space.s,
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.list_alt_rounded, color: Brand.dorado),
+                const SizedBox(width: Space.s),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Índice por temática',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: FontSizes.body,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        examples.isEmpty
+                            ? '$topics temáticas'
+                            : '$topics temáticas · $examples…',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: FontSizes.caption,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: Colors.white70),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

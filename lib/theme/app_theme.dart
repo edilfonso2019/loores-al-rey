@@ -106,6 +106,11 @@ class AppTheme {
       scaffoldBackgroundColor: scheme.surface,
     );
     return base.copyWith(
+      // Flecha "‹" del Figma en todas las pantallas (consistencia).
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (_) =>
+            const Icon(Icons.arrow_back_ios_new_rounded),
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: dark ? const Color(0xFF07183F) : Brand.azul,
         foregroundColor: Colors.white,
