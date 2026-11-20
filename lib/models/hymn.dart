@@ -107,9 +107,21 @@ class Hymn {
   final String? cita;
   final String? versiculo;
 
-  /// Opcionales (aún no vienen en el JSON): autor y tonalidad "Fa M 4/4".
+  /// Datos de la partitura (opcionales; aún faltan algunos himnos).
+  /// [autor] es "Desconocido" si la partitura no lo indica.
   final String? autor;
+
+  /// Tonalidad, ej. "Si bemol mayor".
   final String? tono;
+
+  /// Compás, ej. "4/4".
+  final String? compas;
+
+  /// Tonalidades a las que modula (raro), ej. ["Sol mayor"].
+  final List<String> modula;
+
+  /// Arreglo, traducción, etc. Ej. "Traducción por W. R. Adell".
+  final List<String> creditos;
 
   const Hymn({
     required this.book,
@@ -122,6 +134,9 @@ class Hymn {
     this.versiculo,
     this.autor,
     this.tono,
+    this.compas,
+    this.modula = const [],
+    this.creditos = const [],
   });
 
   String get id => '$book-$number';
@@ -144,6 +159,34 @@ class Hymn {
 
   String get fullText => [...estrofas, if (hasChorus) coro!].join('\n\n');
 
+  bool get hasScoreData => autor != null || tono != null || compas != null;
+
+  /// "Juan Hatton", "Autor desconocido" o null si no hay datos.
+  String? get autorMostrado => autor == null
+      ? null
+      : (autor == 'Desconocido' ? 'Autor desconocido' : autor);
+
+  /// Versión corta, como en la partitura: "Si♭ M · 4/4".
+  String? get tonoCorto => _tonoCompas(abreviar(tono));
+
+  /// Versión completa: "Si bemol mayor · 4/4".
+  String? get tonoLargo => _tonoCompas(tono);
+
+  String? _tonoCompas(String? t) {
+    final parts = [?t, ?compas];
+    return parts.isEmpty ? null : parts.join(' · ');
+  }
+
+  /// "Si bemol mayor" → "Si♭ M"; "Do sostenido menor" → "Do♯ m".
+  static String? abreviar(String? tono) {
+    if (tono == null) return null;
+    return tono
+        .replaceAll(' bemol', '♭')
+        .replaceAll(' sostenido', '♯')
+        .replaceAll(RegExp(r' mayor$'), ' M')
+        .replaceAll(RegExp(r' menor$'), ' m');
+  }
+
   factory Hymn.fromJson(String book, Map<String, dynamic> json) => Hymn(
     book: book,
     number: json['n'] as int,
@@ -155,6 +198,9 @@ class Hymn {
     versiculo: json['versiculo'] as String?,
     autor: json['autor'] as String?,
     tono: json['tono'] as String?,
+    compas: json['compas'] as String?,
+    modula: List<String>.from(json['modula'] as List? ?? const []),
+    creditos: List<String>.from(json['creditos'] as List? ?? const []),
   );
 }
 

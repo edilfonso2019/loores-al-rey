@@ -9,11 +9,12 @@ App **Android** (primero) de himnario para la **Iglesia Adventista del Séptimo 
 - No hay Visual Studio: evitar paquetes con *native assets* (por eso `pdfx` y no `pdfrx`), o `flutter test` falla.
 - Keystore en `C:\Users\LENOVO\LooresAlRey-Keystore\` (fuera del repo); `android/key.properties` la referencia y está en .gitignore.
 - `package:flutter/material.dart` da avisos de deprecación (Flutter 3.50 sugiere `material_ui`); no migrar mientras pdfx/share_plus sigan usando material.dart.
-- Pendiente: probar en celular real, configurar Google Drive (`docs/GOOGLE_DRIVE.md`), autor/tonalidad en el JSON, pistas cantadas en el servidor.
+- Pendiente: probar en celular real, configurar Google Drive (`docs/GOOGLE_DRIVE.md`), autor/tono/compás de los himnos 724–791, pistas cantadas en el servidor.
 
 ## Himnarios (datos en `assets/data/`)
 - `clasico.json` — **Himnario Clásico "Loores al Rey"**, 791 himnos, 54 categorías (temáticas). `activo: true`.
-  Formato: `{id, nombre, activo, categorias:[..], himnos:[{n, t, cat, estrofas:[..], coro?, cita?, versiculo?}]}`.
+  Formato: `{id, nombre, activo, categorias:[..], secciones:[{nombre,desde,hasta}], himnos:[{n, t, cat, autor?, tono?, compas?, modula?, creditos?, estrofas:[..], coro?, cita?, versiculo?}]}`.
+  `autor`/`tono`/`compas`/`creditos` vienen de las partituras: fuente `tools/fuentes/himnos_autor_tono.json` (del usuario), se fusionan con `node tools/fusionar_autor_tono.js` (repetible; nunca editar esos campos a mano en clasico.json). Faltan los himnos 724–791. `autor: "Desconocido"` = la partitura no lo indica.
   `cat` es el índice en `categorias`. El coro se canta después de cada estrofa.
 - `cg.json` — **Himnario CG**: vacío y `activo: false`. Aún no hay letras, pistas ni partituras. La app debe soportarlo (selector, búsqueda "Todos/Clásico/CG") pero ocultarlo o mostrarlo como "Próximamente" mientras `activo` sea false. Cuando llegue el material solo se llena el JSON y se pone `activo: true`.
 - Origen de los datos: app Candelero (repo privado `edilfonso2019/candelero-app`, `apk/assets/himnario.js`).

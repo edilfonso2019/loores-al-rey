@@ -254,16 +254,35 @@ class _Lyrics extends StatelessWidget {
           ),
           if (cat.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 2),
+              padding: const EdgeInsets.only(top: Space.xxs / 2),
               child: Text(
                 cat,
                 style: TextStyle(
-                  fontSize: 13,
-                  color: fg.withValues(alpha: 0.6),
+                  fontSize: FontSizes.caption,
+                  color: fg.withValues(alpha: 0.7),
                 ),
               ),
             ),
-          const SizedBox(height: 14),
+          // Datos de la partitura: autor, tonalidad, compás y créditos.
+          if (hymn.hasScoreData || hymn.creditos.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: Space.xxs),
+              child: Text(
+                [
+                  [?hymn.autorMostrado, ?hymn.tonoLargo].join(' · '),
+                  if (hymn.modula.isNotEmpty)
+                    'Modula a ${hymn.modula.join(', ')}',
+                  ...hymn.creditos,
+                ].where((l) => l.isNotEmpty).join('\n'),
+                style: TextStyle(
+                  fontSize: FontSizes.caption,
+                  height: 1.4,
+                  fontStyle: FontStyle.italic,
+                  color: fg.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+          const SizedBox(height: Space.m),
           for (final (i, v) in hymn.verses.indexed) ...[
             // El coro completo solo la primera vez; después, una marca breve
             // para no alargar la pantalla (en proyección sí se repite).
@@ -396,12 +415,13 @@ class _PlayerBar extends StatelessWidget {
     // Si faltan ambos datos se dice una sola vez (menos ruido visual).
     final String subtitle;
     final String? tono;
-    if (hymn.autor == null && hymn.tono == null) {
+    if (!hymn.hasScoreData) {
       subtitle = 'Autor y tono no disponibles';
       tono = null;
     } else {
-      subtitle = hymn.autor ?? 'Autor no disponible';
-      tono = hymn.tono ?? 'Tono no disponible';
+      subtitle = hymn.autorMostrado ?? 'Autor no disponible';
+      // Corto, como en la partitura y el Figma: "Fa M · 4/4".
+      tono = hymn.tonoCorto ?? 'Tono no disponible';
     }
     // Si el servidor no tiene el recurso, se avisa sin esperar a que toquen play.
     media.prefetchAvailability(hymn, kind);

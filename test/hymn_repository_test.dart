@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loores_al_rey/data/hymn_repository.dart';
+import 'package:loores_al_rey/models/hymn.dart';
 
 import 'test_utils.dart';
 
@@ -66,5 +67,31 @@ void main() {
 
   test('índice de un himnario vacío (CG) no falla', () {
     expect(repo.topicIndex('cg').every((g) => g.topics.isEmpty), isTrue);
+  });
+
+  test('autor, tonalidad y compás de la partitura', () {
+    final h1 = repo.find('clasico', 1)!;
+    expect(h1.autorMostrado, 'Juan Hatton');
+    expect(h1.tonoLargo, 'Re mayor · 4/4');
+    expect(h1.tonoCorto, 'Re M · 4/4');
+    expect(repo.find('clasico', 3)!.tonoCorto, 'Si♭ M · 4/4');
+    // Partitura sin autor: se muestra "Autor desconocido".
+    expect(repo.find('clasico', 541)!.autorMostrado, 'Autor desconocido');
+    // Himnos aún sin datos.
+    expect(repo.find('clasico', 724)!.hasScoreData, isFalse);
+  });
+
+  test('títulos corregidos (541 y sin saltos de línea)', () {
+    expect(repo.find('clasico', 541)!.title, 'Oh Señor, procuro en vano');
+    expect(
+      repo.byBook('clasico').where((h) => h.title.contains('\n')),
+      isEmpty,
+    );
+  });
+
+  test('abreviatura de tonalidades', () {
+    expect(Hymn.abreviar('Do sostenido menor'), 'Do♯ m');
+    expect(Hymn.abreviar('Mi bemol menor'), 'Mi♭ m');
+    expect(Hymn.abreviar(null), isNull);
   });
 }

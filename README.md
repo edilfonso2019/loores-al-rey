@@ -48,7 +48,8 @@ storeFile=C:/Users/LENOVO/LooresAlRey-Keystore/loores-al-rey-release.jks
 
 - `assets/data/clasico.json` y `assets/data/cg.json`:
   `{id, nombre, activo, categorias, himnos:[{n, t, cat, estrofas, coro?, cita?, versiculo?, autor?, tono?}]}`.
-  `autor` y `tono` son opcionales; mientras no existan la app muestra "no disponible".
+  `autor`, `tono`, `compas` y `creditos` salen de las partituras (`tools/fuentes/himnos_autor_tono.json`)
+  y se fusionan con `node tools/fusionar_autor_tono.js`; si faltan, la app muestra "no disponible".
 - Servidor de pistas y partituras por himnario: `lib/config.dart` (o un bloque
   `"servidor"` dentro del JSON del himnario).
 - `tools/import_hymns.py` es del formato anterior (nuevo/antiguo) y está pendiente de adaptar.
