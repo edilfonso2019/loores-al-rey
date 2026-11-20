@@ -233,7 +233,6 @@ class _Lyrics extends StatelessWidget {
     final theme = Theme.of(context);
     final fg = color ?? theme.colorScheme.onSurface;
     final body = TextStyle(fontSize: fontSize, height: 1.45, color: fg);
-    final cat = HymnRepository.instance.categoryName(hymn);
     return SelectionArea(
       child: ListView(
         // Abajo deja espacio para el botón de favorito (48 + márgenes).
@@ -252,36 +251,6 @@ class _Lyrics extends StatelessWidget {
               color: fg,
             ),
           ),
-          if (cat.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: Space.xxs / 2),
-              child: Text(
-                cat,
-                style: TextStyle(
-                  fontSize: FontSizes.caption,
-                  color: fg.withValues(alpha: 0.7),
-                ),
-              ),
-            ),
-          // Datos de la partitura: autor, tonalidad, compás y créditos.
-          if (hymn.hasScoreData || hymn.creditos.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: Space.xxs),
-              child: Text(
-                [
-                  [?hymn.autorMostrado, ?hymn.tonoLargo].join(' · '),
-                  if (hymn.modula.isNotEmpty)
-                    'Modula a ${hymn.modula.join(', ')}',
-                  ...hymn.creditos,
-                ].where((l) => l.isNotEmpty).join('\n'),
-                style: TextStyle(
-                  fontSize: FontSizes.caption,
-                  height: 1.4,
-                  fontStyle: FontStyle.italic,
-                  color: fg.withValues(alpha: 0.7),
-                ),
-              ),
-            ),
           const SizedBox(height: Space.m),
           for (final (i, v) in hymn.verses.indexed) ...[
             // El coro completo solo la primera vez; después, una marca breve
