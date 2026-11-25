@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/playlist.dart';
+import '../models/score_sync.dart';
 import '../theme/app_theme.dart';
 
 /// Estado global persistido: favoritos, historial, playlists y ajustes.
@@ -19,6 +20,7 @@ class AppState extends ChangeNotifier {
   static const _kContinuous = 'continuousPlay';
   static const _kMinimized = 'minimizedMode';
   static const _kLastBackup = 'lastDriveBackup';
+  static const _kSync = 'scoreSync';
 
   static const minFont = 14.0;
   static const maxFont = 40.0;
@@ -43,6 +45,14 @@ class AppState extends ChangeNotifier {
 
   DateTime? lastDriveBackup;
 
+  /// Marcas de sincronización partitura ↔ audio hechas en este teléfono,
+  /// por clave "clasico-131-instrumental". Tienen prioridad sobre las que
+  /// vienen incluidas en la app ([bundledSync]).
+  final Map<String, List<SyncMark>> syncMarks = {};
+
+  /// Marcas incluidas en la app (assets/data/sincronizacion.json).
+  Map<String, List<SyncMark>> bundledSync = {};
+
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     final p = _prefs!;
@@ -66,6 +76,9 @@ class AppState extends ChangeNotifier {
     minimizedMode = p.getBool(_kMinimized) ?? true;
     final last = p.getString(_kLastBackup);
     lastDriveBackup = last == null ? null : DateTime.tryParse(last);
+    syncMarks
+      ..clear()
+      ..addAll(decodeSync(p.getString(_kSync)));
     notifyListeners();
   }
 
@@ -212,6 +225,49 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---------------- Sincronización partitura ----------------
+
+  /// Marcas para [key] (las propias o, si no hay, las incluidas).
+  List<SyncMark> syncFor(String key) =>
+      syncMarks[key] ?? bundledSync[key] ?? const [];
+
+  bool hasOwnSync(String key) => syncMarks.containsKey(key);
+
+  void setSync(String key, List<SyncMark> marks) {
+    final sorted = [...marks]..sort((a, b) => a.ms.compareTo(b.ms));
+    if (sorted.isEmpty) {
+      syncMarks.remove(key);
+    } else {
+      syncMarks[key] = sorted;
+    }
+    _prefs?.setString(_kSync, encodeSync(syncMarks));
+    notifyListeners();
+  }
+
+  static String encodeSync(Map<String, List<SyncMark>> m) => jsonEncode({
+    for (final e in m.entries) e.key: e.value.map((x) => x.toJson()).toList(),
+  });
+
+  static Map<String, List<SyncMark>> decodeSync(Object? raw) {
+    try {
+      final data = raw is String ? jsonDecode(raw) : raw;
+      if (data is! Map) return {};
+      return {
+        for (final e in data.entries)
+          e.key as String:
+              (e.value as List)
+                  .map(
+                    (x) =>
+                        SyncMark.fromJson((x as Map).cast<String, dynamic>()),
+                  )
+                  .toList()
+                ..sort((a, b) => a.ms.compareTo(b.ms)),
+      };
+    } catch (_) {
+      return {};
+    }
+  }
+
   // ---------------- Respaldo ----------------
 
   static const backupVersion = 1;
@@ -224,6 +280,7 @@ class AppState extends ChangeNotifier {
     'favoritos': favorites,
     'historial': history,
     'playlists': playlists.map((p) => p.toJson()).toList(),
+    'sincronizacion': jsonDecode(encodeSync(syncMarks)),
     'ajustes': {
       'fontSize': fontSize,
       'themeMode': themeMode.index,
@@ -255,6 +312,11 @@ class AppState extends ChangeNotifier {
           (e) => Playlist.fromJson(e as Map<String, dynamic>),
         ),
       );
+    if (data['sincronizacion'] != null) {
+      syncMarks
+        ..clear()
+        ..addAll(decodeSync(data['sincronizacion']));
+    }
     final a = (data['ajustes'] as Map?)?.cast<String, dynamic>() ?? const {};
     fontSize = ((a['fontSize'] as num?)?.toDouble() ?? fontSize).clamp(
       minFont,
@@ -284,6 +346,7 @@ class AppState extends ChangeNotifier {
       await p.setBool(_kBasic, basicMode);
       await p.setBool(_kContinuous, continuousPlay);
       await p.setBool(_kMinimized, minimizedMode);
+      await p.setString(_kSync, encodeSync(syncMarks));
     }
     notifyListeners();
   }

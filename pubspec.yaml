@@ -40,6 +40,7 @@ flutter:
   assets:
     - assets/data/clasico.json
     - assets/data/cg.json
+    - assets/data/sincronizacion.json
     - assets/images/portada.png
   fonts:
     - family: NotoSans

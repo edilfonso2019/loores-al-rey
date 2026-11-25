@@ -43,6 +43,12 @@ Future<void> main() async {
     SharedPreferences.getInstance().then((prefs) => media.init(prefs: prefs)),
     HymnRepository.instance.load(),
   ]);
+  // Marcas de sincronización partitura ↔ audio incluidas en la app.
+  try {
+    state.bundledSync = AppState.decodeSync(
+      await rootBundle.loadString('assets/data/sincronizacion.json'),
+    );
+  } catch (_) {}
   runApp(
     MultiProvider(
       providers: [

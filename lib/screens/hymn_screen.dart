@@ -379,8 +379,14 @@ class _PlayerBar extends StatelessWidget {
     final player = context.watch<PlayerService>();
     final media = context.watch<MediaService>();
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final isAudio = kind.isAudio;
-    final active = isAudio && player.isCurrent(hymn, kind);
+    // En la pestaña Partituras se reproduce la pista (instrumental, o la
+    // que ya esté sonando de este himno) para seguirla con la rayita.
+    final audioKind = kind.isAudio
+        ? kind
+        : (player.current?.id == hymn.id && player.kind.isAudio
+              ? player.kind
+              : MediaKind.instrumental);
+    final active = player.isCurrent(hymn, audioKind);
     // Si faltan ambos datos se dice una sola vez (menos ruido visual).
     final String subtitle;
     final String? tono;
@@ -393,10 +399,12 @@ class _PlayerBar extends StatelessWidget {
       tono = hymn.tonoCorto ?? 'Tono no disponible';
     }
     // Si el servidor no tiene el recurso, se avisa sin esperar a que toquen play.
-    media.prefetchAvailability(hymn, kind);
-    final missing = media.availability(hymn, kind) == false;
+    media.prefetchAvailability(hymn, audioKind);
+    if (!kind.isAudio) media.prefetchAvailability(hymn, kind);
+    final missing = media.availability(hymn, audioKind) == false;
+    final fileMissing = media.availability(hymn, kind) == false;
     final error = missing
-        ? MediaService.notAvailableMessage(hymn, kind)
+        ? MediaService.notAvailableMessage(hymn, audioKind)
         : (active ? player.error : null);
     final secondary = Brand.textoSecundario(context);
     return Container(
@@ -408,21 +416,14 @@ class _PlayerBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          if (isAudio)
-            _RoundButton(
-              tooltip: active && player.playing ? 'Pausar' : 'Reproducir',
-              icon: active && player.playing
-                  ? Icons.pause_rounded
-                  : Icons.play_arrow_rounded,
-              busy: active && player.loading,
-              onPressed: missing ? null : () => player.play(hymn, kind),
-            )
-          else
-            const SizedBox(
-              width: 48,
-              height: 48,
-              child: Icon(Icons.picture_as_pdf_rounded, color: Brand.azul),
-            ),
+          _RoundButton(
+            tooltip: active && player.playing ? 'Pausar' : 'Reproducir',
+            icon: active && player.playing
+                ? Icons.pause_rounded
+                : Icons.play_arrow_rounded,
+            busy: active && player.loading,
+            onPressed: missing ? null : () => player.play(hymn, audioKind),
+          ),
           const SizedBox(width: Space.xs),
           Expanded(
             child: active && error == null
@@ -466,7 +467,7 @@ class _PlayerBar extends StatelessWidget {
             hymn: hymn,
             kind: kind,
             media: media,
-            enabled: !missing,
+            enabled: !fileMissing,
           ),
         ],
       ),

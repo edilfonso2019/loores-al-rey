@@ -16,6 +16,7 @@ App **Android** (primero) de himnario para la **Iglesia Adventista del Séptimo 
   Formato: `{id, nombre, activo, categorias:[..], secciones:[{nombre,desde,hasta}], himnos:[{n, t, cat, autor?, tono?, compas?, modula?, creditos?, estrofas:[..], coro?, cita?, versiculo?}]}`.
   `autor`/`tono`/`compas`/`creditos` vienen de las partituras: fuente `tools/fuentes/himnos_autor_tono.json` (del usuario), se fusionan con `node tools/fusionar_autor_tono.js` (repetible; nunca editar esos campos a mano en clasico.json). Faltan los himnos 724–791. `autor: "Desconocido"` = la partitura no lo indica.
   `cat` es el índice en `categorias`. El coro se canta después de cada estrofa.
+- `sincronizacion.json` — marcas partitura ↔ audio ("Marcar renglones"): `{ "clasico-131-instrumental": [{t: ms, p: página, x, y}] }` (x/y en 0..1). Las hacen los usuarios en la app y las comparten (menú ⋮ → Compartir mis marcas); se pegan aquí para incluirlas. Las propias del teléfono tienen prioridad y van en el respaldo.
 - `cg.json` — **Himnario CG**: vacío y `activo: false`. Aún no hay letras, pistas ni partituras. La app debe soportarlo (selector, búsqueda "Todos/Clásico/CG") pero ocultarlo o mostrarlo como "Próximamente" mientras `activo` sea false. Cuando llegue el material solo se llena el JSON y se pone `activo: true`.
 - Origen de los datos: app Candelero (repo privado `edilfonso2019/candelero-app`, `apk/assets/himnario.js`).
 

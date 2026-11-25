@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loores_al_rey/models/score_sync.dart';
 import 'package:loores_al_rey/services/app_state.dart';
 import 'package:loores_al_rey/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -63,5 +64,25 @@ void main() {
   test('rechaza archivos que no son respaldos de la app', () async {
     final s = await fresh();
     expect(() => s.restoreBackup({'hola': 1}), throwsFormatException);
+  });
+
+  test('las marcas de partitura se guardan y van en el respaldo', () async {
+    final a = await fresh();
+    a.setSync('clasico-1-instrumental', const [
+      SyncMark(ms: 5000, page: 0, x: 0.1, y: 0.5),
+      SyncMark(ms: 1000, page: 0, x: 0.1, y: 0.2),
+    ]);
+    // Se ordenan por tiempo.
+    expect(a.syncFor('clasico-1-instrumental').first.ms, 1000);
+    final backup = a.toBackup();
+    final b = await fresh();
+    await b.restoreBackup(backup);
+    expect(b.syncFor('clasico-1-instrumental'), hasLength(2));
+    // Las propias tienen prioridad sobre las incluidas en la app.
+    b.bundledSync = {
+      'clasico-2-instrumental': const [SyncMark(ms: 0, page: 0, x: 0, y: 0)],
+    };
+    expect(b.syncFor('clasico-2-instrumental'), hasLength(1));
+    expect(b.hasOwnSync('clasico-2-instrumental'), isFalse);
   });
 }
