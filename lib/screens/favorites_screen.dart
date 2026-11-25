@@ -42,8 +42,10 @@ class FavoritesScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [_FavoritesTab(), _PlaylistsTab(), _HistoryTab()],
+        body: const ReadableWidth(
+          child: TabBarView(
+            children: [_FavoritesTab(), _PlaylistsTab(), _HistoryTab()],
+          ),
         ),
       ),
     );
@@ -172,29 +174,31 @@ class _PlaylistsTab extends StatelessWidget {
           if (name != null) state.createPlaylist(name);
         },
       ),
-      body: state.playlists.isEmpty
-          ? const _Empty(
-              icon: Icons.queue_music,
-              text: 'Crea listas de culto para reproducir himnos seguidos.',
-            )
-          : ListView(
-              padding: const EdgeInsets.only(bottom: 88),
-              children: [
-                for (final pl in state.playlists)
-                  ListTile(
-                    leading: const Icon(Icons.queue_music, color: Brand.azul),
-                    title: Text(pl.name),
-                    subtitle: Text('${pl.items.length} himnos'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => PlaylistScreen(playlistId: pl.id),
+      body: ReadableWidth(
+        child: state.playlists.isEmpty
+            ? const _Empty(
+                icon: Icons.queue_music,
+                text: 'Crea listas de culto para reproducir himnos seguidos.',
+              )
+            : ListView(
+                padding: const EdgeInsets.only(bottom: 88),
+                children: [
+                  for (final pl in state.playlists)
+                    ListTile(
+                      leading: const Icon(Icons.queue_music, color: Brand.azul),
+                      title: Text(pl.name),
+                      subtitle: Text('${pl.items.length} himnos'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => PlaylistScreen(playlistId: pl.id),
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
+                ],
+              ),
+      ),
     );
   }
 }
@@ -284,64 +288,69 @@ class PlaylistScreen extends StatelessWidget {
                 name: pl.name,
               ),
             ),
-      body: pl.items.isEmpty
-          ? const _Empty(
-              icon: Icons.playlist_add,
-              text: 'Lista vacía.\nAgrega himnos desde el menú ⋮ de un himno.',
-            )
-          : ReorderableListView.builder(
-              padding: const EdgeInsets.only(bottom: 88),
-              itemCount: pl.items.length,
-              onReorderItem: (a, b) => state.reorderPlaylist(pl, a, b),
-              itemBuilder: (ctx, i) {
-                final h = hymns[i];
-                return Dismissible(
-                  key: ValueKey('${pl.id}-${pl.items[i]}'),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    color: Brand.coral,
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 20),
-                    child: const Icon(Icons.delete, color: Colors.white),
-                  ),
-                  onDismissed: (_) => state.removeFromPlaylist(pl, i),
-                  child: ListTile(
-                    selected: i == playingHere,
-                    leading: CircleAvatar(
-                      backgroundColor: i == playingHere
-                          ? Brand.dorado
-                          : Brand.azul,
-                      foregroundColor: i == playingHere
-                          ? Brand.azul
-                          : Colors.white,
-                      child: i == playingHere
-                          ? const Icon(Icons.volume_up_rounded, size: 20)
-                          : Text('${i + 1}'),
+      body: ReadableWidth(
+        child: pl.items.isEmpty
+            ? const _Empty(
+                icon: Icons.playlist_add,
+                text:
+                    'Lista vacía.\nAgrega himnos desde el menú ⋮ de un himno.',
+              )
+            : ReorderableListView.builder(
+                padding: const EdgeInsets.only(bottom: 88),
+                itemCount: pl.items.length,
+                onReorderItem: (a, b) => state.reorderPlaylist(pl, a, b),
+                itemBuilder: (ctx, i) {
+                  final h = hymns[i];
+                  return Dismissible(
+                    key: ValueKey('${pl.id}-${pl.items[i]}'),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      color: Brand.coral,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      child: const Icon(Icons.delete, color: Colors.white),
                     ),
-                    title: Text(
-                      h == null ? pl.items[i] : '#${h.number} - ${h.title}',
+                    onDismissed: (_) => state.removeFromPlaylist(pl, i),
+                    child: ListTile(
+                      selected: i == playingHere,
+                      leading: CircleAvatar(
+                        backgroundColor: i == playingHere
+                            ? Brand.dorado
+                            : Brand.azul,
+                        foregroundColor: i == playingHere
+                            ? Brand.azul
+                            : Colors.white,
+                        child: i == playingHere
+                            ? const Icon(Icons.volume_up_rounded, size: 20)
+                            : Text('${i + 1}'),
+                      ),
+                      title: Text(
+                        h == null ? pl.items[i] : '#${h.number} - ${h.title}',
+                      ),
+                      subtitle: h == null
+                          ? null
+                          : Text(
+                              hymnalName(h),
+                              style: const TextStyle(
+                                fontSize: FontSizes.caption,
+                              ),
+                            ),
+                      onTap: h == null
+                          ? null
+                          : () => ctx.read<PlayerService>().playQueue(
+                              pl.items,
+                              index: i,
+                              name: pl.name,
+                            ),
+                      trailing: ReorderableDragStartListener(
+                        index: i,
+                        child: const Icon(Icons.drag_handle),
+                      ),
                     ),
-                    subtitle: h == null
-                        ? null
-                        : Text(
-                            hymnalName(h),
-                            style: const TextStyle(fontSize: FontSizes.caption),
-                          ),
-                    onTap: h == null
-                        ? null
-                        : () => ctx.read<PlayerService>().playQueue(
-                            pl.items,
-                            index: i,
-                            name: pl.name,
-                          ),
-                    trailing: ReorderableDragStartListener(
-                      index: i,
-                      child: const Icon(Icons.drag_handle),
-                    ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
+      ),
     );
   }
 }

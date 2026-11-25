@@ -200,15 +200,17 @@ class _HymnScreenState extends State<HymnScreen> {
           ? null
           : SafeArea(
               top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _PlayerBar(hymn: h, kind: _kind),
-                  _KindTabs(
-                    kind: _kind,
-                    onChanged: (k) => setState(() => _kind = k),
-                  ),
-                ],
+              child: ReadableWidth(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _PlayerBar(hymn: h, kind: _kind),
+                    _KindTabs(
+                      kind: _kind,
+                      onChanged: (k) => setState(() => _kind = k),
+                    ),
+                  ],
+                ),
               ),
             ),
     );
@@ -233,15 +235,15 @@ class _Lyrics extends StatelessWidget {
     final theme = Theme.of(context);
     final fg = color ?? theme.colorScheme.onSurface;
     final body = TextStyle(fontSize: fontSize, height: 1.45, color: fg);
+    // En tablets la letra no se estira: líneas de ~680 px se leen mejor.
+    final side = ((MediaQuery.sizeOf(context).width - 680) / 2).clamp(
+      Space.reading,
+      double.infinity,
+    );
     return SelectionArea(
       child: ListView(
         // Abajo deja espacio para el botón de favorito (48 + márgenes).
-        padding: const EdgeInsets.fromLTRB(
-          Space.reading,
-          Space.m,
-          Space.reading,
-          88,
-        ),
+        padding: EdgeInsets.fromLTRB(side, Space.m, side, 88),
         children: [
           Text(
             hymn.title,

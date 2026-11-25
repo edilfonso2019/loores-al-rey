@@ -5,6 +5,7 @@ import '../data/hymn_repository.dart';
 import '../models/hymn.dart';
 import '../services/media_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/common.dart';
 
 /// Elegir qué himnos descargar de un tipo (instrumental, cantado,
 /// partitura). Devuelve la lista elegida con Navigator.pop.
@@ -63,146 +64,148 @@ class _DownloadPickerScreenState extends State<DownloadPickerScreen> {
     final count = _selected.length;
     return Scaffold(
       appBar: AppBar(title: Text('Elegir · ${widget.kind.label}')),
-      body: Column(
-        children: [
-          // ---------- Filtros ----------
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              Space.gutter,
-              Space.s,
-              Space.gutter,
-              0,
-            ),
-            child: TextField(
-              controller: _query,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: 'Número o título',
-                prefixIcon: const Icon(Icons.search_rounded),
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(Space.s),
-                ),
-                suffixIcon: _query.text.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: 'Borrar',
-                        icon: const Icon(Icons.close_rounded),
-                        onPressed: () => setState(_query.clear),
-                      ),
+      body: ReadableWidth(
+        child: Column(
+          children: [
+            // ---------- Filtros ----------
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Space.gutter,
+                Space.s,
+                Space.gutter,
+                0,
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              Space.gutter,
-              Space.xs,
-              Space.gutter,
-              0,
-            ),
-            child: DropdownButtonFormField<String?>(
-              initialValue: _category,
-              isExpanded: true,
-              decoration: InputDecoration(
-                isDense: true,
-                prefixIcon: const Icon(Icons.list_alt_rounded),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(Space.s),
-                ),
-              ),
-              items: [
-                const DropdownMenuItem(
-                  value: null,
-                  child: Text('Todas las temáticas'),
-                ),
-                for (final c in _repo.categories(book: widget.book))
-                  DropdownMenuItem(
-                    value: c,
-                    child: Text(c, overflow: TextOverflow.ellipsis),
+              child: TextField(
+                controller: _query,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: 'Número o título',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(Space.s),
                   ),
-              ],
-              onChanged: (c) => setState(() => _category = c),
-            ),
-          ),
-          // ---------- Seleccionar visibles ----------
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              Space.gutter,
-              Space.xs,
-              Space.xs,
-              0,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${visible.length} himnos'
-                    '${_category != null || _query.text.isNotEmpty ? ' (filtrados)' : ''}',
-                    style: TextStyle(
-                      fontSize: FontSizes.caption,
-                      color: secondary,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: selectableVisible.isEmpty
+                  suffixIcon: _query.text.isEmpty
                       ? null
-                      : () => allVisibleSelected
-                            ? setState(() {
-                                for (final h in visible) {
-                                  _selected.remove(h.id);
-                                }
-                              })
-                            : _selectVisible(media, visible),
-                  child: Text(
-                    allVisibleSelected
-                        ? 'Quitar selección'
-                        : 'Seleccionar todos',
+                      : IconButton(
+                          tooltip: 'Borrar',
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () => setState(_query.clear),
+                        ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Space.gutter,
+                Space.xs,
+                Space.gutter,
+                0,
+              ),
+              child: DropdownButtonFormField<String?>(
+                initialValue: _category,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  isDense: true,
+                  prefixIcon: const Icon(Icons.list_alt_rounded),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(Space.s),
                   ),
                 ),
-              ],
-            ),
-          ),
-          const Divider(),
-          // ---------- Lista ----------
-          Expanded(
-            child: ListView.builder(
-              itemCount: visible.length,
-              itemBuilder: (context, i) {
-                final h = visible[i];
-                final downloaded = media.isDownloaded(h, widget.kind);
-                final missing = media.availability(h, widget.kind) == false;
-                final enabled = !downloaded && !missing;
-                return CheckboxListTile(
-                  contentPadding: const EdgeInsets.only(
-                    left: Space.gutter,
-                    right: Space.xs,
+                items: [
+                  const DropdownMenuItem(
+                    value: null,
+                    child: Text('Todas las temáticas'),
                   ),
-                  value: downloaded || _selected.contains(h.id),
-                  onChanged: enabled
-                      ? (v) => setState(() {
-                          v == true
-                              ? _selected.add(h.id)
-                              : _selected.remove(h.id);
-                        })
-                      : null,
-                  title: Text('${h.number} - ${h.title}'),
-                  subtitle: Text(
-                    downloaded
-                        ? 'Ya descargado'
-                        : missing
-                        ? 'Aún no disponible'
-                        : _repo.categoryName(h),
-                    style: TextStyle(
-                      fontSize: FontSizes.caption,
-                      color: secondary,
+                  for (final c in _repo.categories(book: widget.book))
+                    DropdownMenuItem(
+                      value: c,
+                      child: Text(c, overflow: TextOverflow.ellipsis),
+                    ),
+                ],
+                onChanged: (c) => setState(() => _category = c),
+              ),
+            ),
+            // ---------- Seleccionar visibles ----------
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Space.gutter,
+                Space.xs,
+                Space.xs,
+                0,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${visible.length} himnos'
+                      '${_category != null || _query.text.isNotEmpty ? ' (filtrados)' : ''}',
+                      style: TextStyle(
+                        fontSize: FontSizes.caption,
+                        color: secondary,
+                      ),
                     ),
                   ),
-                );
-              },
+                  TextButton(
+                    onPressed: selectableVisible.isEmpty
+                        ? null
+                        : () => allVisibleSelected
+                              ? setState(() {
+                                  for (final h in visible) {
+                                    _selected.remove(h.id);
+                                  }
+                                })
+                              : _selectVisible(media, visible),
+                    child: Text(
+                      allVisibleSelected
+                          ? 'Quitar selección'
+                          : 'Seleccionar todos',
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            const Divider(),
+            // ---------- Lista ----------
+            Expanded(
+              child: ListView.builder(
+                itemCount: visible.length,
+                itemBuilder: (context, i) {
+                  final h = visible[i];
+                  final downloaded = media.isDownloaded(h, widget.kind);
+                  final missing = media.availability(h, widget.kind) == false;
+                  final enabled = !downloaded && !missing;
+                  return CheckboxListTile(
+                    contentPadding: const EdgeInsets.only(
+                      left: Space.gutter,
+                      right: Space.xs,
+                    ),
+                    value: downloaded || _selected.contains(h.id),
+                    onChanged: enabled
+                        ? (v) => setState(() {
+                            v == true
+                                ? _selected.add(h.id)
+                                : _selected.remove(h.id);
+                          })
+                        : null,
+                    title: Text('${h.number} - ${h.title}'),
+                    subtitle: Text(
+                      downloaded
+                          ? 'Ya descargado'
+                          : missing
+                          ? 'Aún no disponible'
+                          : _repo.categoryName(h),
+                      style: TextStyle(
+                        fontSize: FontSizes.caption,
+                        color: secondary,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
       // ---------- Acción principal ----------
       bottomNavigationBar: SafeArea(

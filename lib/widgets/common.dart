@@ -198,3 +198,21 @@ String formatDuration(Duration d) {
   final s = d.inSeconds % 60;
   return '$m:${s.toString().padLeft(2, '0')}';
 }
+
+/// En tablets, centra el contenido con un ancho cómodo de lectura (en
+/// teléfonos no cambia nada). Las barras superiores siguen a lo ancho.
+class ReadableWidth extends StatelessWidget {
+  const ReadableWidth({super.key, required this.child, this.maxWidth = 760});
+  final Widget child;
+  final double maxWidth;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    // Alto = el del contenido (sirve también dentro de barras inferiores).
+    heightFactor: 1,
+    child: ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: child,
+    ),
+  );
+}

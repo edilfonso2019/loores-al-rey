@@ -5,6 +5,7 @@ import '../data/hymn_repository.dart';
 import '../models/hymn.dart';
 import '../services/player_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/common.dart';
 import '../widgets/mini_player.dart';
 import 'hymn_screen.dart';
 
@@ -23,31 +24,34 @@ class TopicsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text('Temáticas · ${hymnal?.nombreCorto ?? ''}')),
       bottomNavigationBar: const SafeArea(top: false, child: MiniPlayer()),
-      body: groups.every((g) => g.topics.isEmpty)
-          ? const Center(child: Text('Este himnario aún no tiene himnos.'))
-          : CustomScrollView(
-              slivers: [
-                for (final g in groups) ...[
-                  if (g.name != null)
-                    SliverToBoxAdapter(
-                      child: _SectionHeader(
-                        title: g.name!,
-                        count: g.hymnCount,
-                        color: secondary,
+      body: ReadableWidth(
+        child: groups.every((g) => g.topics.isEmpty)
+            ? const Center(child: Text('Este himnario aún no tiene himnos.'))
+            : CustomScrollView(
+                slivers: [
+                  for (final g in groups) ...[
+                    if (g.name != null)
+                      SliverToBoxAdapter(
+                        child: _SectionHeader(
+                          title: g.name!,
+                          count: g.hymnCount,
+                          color: secondary,
+                        ),
                       ),
+                    SliverList.separated(
+                      itemCount: g.topics.length,
+                      separatorBuilder: (_, _) => const Divider(
+                        indent: Space.gutter,
+                        endIndent: Space.gutter,
+                      ),
+                      itemBuilder: (context, i) =>
+                          _TopicTile(topic: g.topics[i]),
                     ),
-                  SliverList.separated(
-                    itemCount: g.topics.length,
-                    separatorBuilder: (_, _) => const Divider(
-                      indent: Space.gutter,
-                      endIndent: Space.gutter,
-                    ),
-                    itemBuilder: (context, i) => _TopicTile(topic: g.topics[i]),
-                  ),
+                  ],
+                  const SliverToBoxAdapter(child: SizedBox(height: Space.l)),
                 ],
-                const SliverToBoxAdapter(child: SizedBox(height: Space.l)),
-              ],
-            ),
+              ),
+      ),
     );
   }
 }
@@ -140,84 +144,86 @@ class TopicScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(topic.name)),
       bottomNavigationBar: const SafeArea(top: false, child: MiniPlayer()),
-      body: ListView.separated(
-        padding: const EdgeInsets.only(bottom: Space.l),
-        itemCount: hymns.length + 1,
-        separatorBuilder: (_, i) => i == 0
-            ? const SizedBox.shrink()
-            : const Divider(indent: Space.gutter, endIndent: Space.gutter),
-        itemBuilder: (context, i) {
-          if (i == 0) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(
-                Space.gutter,
-                Space.m,
-                Space.gutter,
-                Space.xs,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      hymns.length == 1
-                          ? '1 himno · #${topic.range}'
-                          : '${hymns.length} himnos · #${topic.range}',
-                      style: TextStyle(
-                        fontSize: FontSizes.small,
-                        color: secondary,
+      body: ReadableWidth(
+        child: ListView.separated(
+          padding: const EdgeInsets.only(bottom: Space.l),
+          itemCount: hymns.length + 1,
+          separatorBuilder: (_, i) => i == 0
+              ? const SizedBox.shrink()
+              : const Divider(indent: Space.gutter, endIndent: Space.gutter),
+          itemBuilder: (context, i) {
+            if (i == 0) {
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Space.gutter,
+                  Space.m,
+                  Space.gutter,
+                  Space.xs,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        hymns.length == 1
+                            ? '1 himno · #${topic.range}'
+                            : '${hymns.length} himnos · #${topic.range}',
+                        style: TextStyle(
+                          fontSize: FontSizes.small,
+                          color: secondary,
+                        ),
                       ),
                     ),
-                  ),
-                  FilledButton.tonalIcon(
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(0, Space.touch - Space.xxs),
+                    FilledButton.tonalIcon(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, Space.touch - Space.xxs),
+                      ),
+                      onPressed: () => context.read<PlayerService>().playQueue([
+                        for (final h in hymns) h.id,
+                      ], name: topic.name),
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      label: const Text('Reproducir todos'),
                     ),
-                    onPressed: () => context.read<PlayerService>().playQueue([
-                      for (final h in hymns) h.id,
-                    ], name: topic.name),
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: const Text('Reproducir todos'),
-                  ),
-                ],
+                  ],
+                ),
+              );
+            }
+            final h = hymns[i - 1];
+            return ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: Space.gutter,
               ),
-            );
-          }
-          final h = hymns[i - 1];
-          return ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: Space.gutter,
-            ),
-            leading: SizedBox(
-              width: 40,
-              child: Text(
-                '${h.number}',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: FontSizes.body,
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.primary,
+              leading: SizedBox(
+                width: 40,
+                child: Text(
+                  '${h.number}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: FontSizes.body,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
-            ),
-            title: Text(
-              h.title,
-              style: const TextStyle(
-                fontSize: FontSizes.body,
-                fontWeight: FontWeight.w600,
+              title: Text(
+                h.title,
+                style: const TextStyle(
+                  fontSize: FontSizes.body,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            subtitle: Text(
-              h.firstLine,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: FontSizes.caption, color: secondary),
-            ),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(builder: (_) => HymnScreen(hymn: h)),
-            ),
-          );
-        },
+              subtitle: Text(
+                h.firstLine,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: FontSizes.caption, color: secondary),
+              ),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(builder: (_) => HymnScreen(hymn: h)),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

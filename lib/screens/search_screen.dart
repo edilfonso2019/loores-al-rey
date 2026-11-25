@@ -136,96 +136,100 @@ class _SearchScreenState extends State<SearchScreen> {
             },
           ),
           Expanded(
-            child: _results.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Text(
-                        'No se encontraron himnos para "$query".',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  )
-                : Column(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(
-                          Space.gutter,
-                          Space.xs,
-                          Space.gutter,
-                          Space.xxs,
-                        ),
+            child: ReadableWidth(
+              child: _results.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
                         child: Text(
-                          _results.length == 1
-                              ? '1 himno'
-                              : '${_results.length} himnos',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: Brand.textoSecundario(context)),
+                          'No se encontraron himnos para "$query".',
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                      Expanded(
-                        child: Scrollbar(
-                          controller: _scroll,
-                          interactive: true,
-                          child: ListView.separated(
-                            controller: _scroll,
-                            keyboardDismissBehavior:
-                                ScrollViewKeyboardDismissBehavior.onDrag,
-                            itemCount: _results.length,
-                            separatorBuilder: (context, index) =>
-                                const Divider(),
-                            itemBuilder: (_, i) {
-                              final h = _results[i];
-                              return InkWell(
-                                onTap: () => _open(h),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: Space.gutter,
-                                    vertical: Space.xs,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      HighlightText(
-                                        hymnLabel(h),
-                                        query: query,
-                                        maxLines: 1,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              fontSize: FontSizes.body,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      HighlightText(
-                                        _snippet(h),
-                                        query: query,
-                                        maxLines: 2,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              fontSize: FontSizes.caption,
-                                              color: Brand.textoSecundario(
-                                                context,
-                                              ),
-                                              height: 1.35,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
+                    )
+                  : Column(
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.fromLTRB(
+                            Space.gutter,
+                            Space.xs,
+                            Space.gutter,
+                            Space.xxs,
+                          ),
+                          child: Text(
+                            _results.length == 1
+                                ? '1 himno'
+                                : '${_results.length} himnos',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Brand.textoSecundario(context),
                                 ),
-                              );
-                            },
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                        Expanded(
+                          child: Scrollbar(
+                            controller: _scroll,
+                            interactive: true,
+                            child: ListView.separated(
+                              controller: _scroll,
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
+                              itemCount: _results.length,
+                              separatorBuilder: (context, index) =>
+                                  const Divider(),
+                              itemBuilder: (_, i) {
+                                final h = _results[i];
+                                return InkWell(
+                                  onTap: () => _open(h),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: Space.gutter,
+                                      vertical: Space.xs,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        HighlightText(
+                                          hymnLabel(h),
+                                          query: query,
+                                          maxLines: 1,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                fontSize: FontSizes.body,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        HighlightText(
+                                          _snippet(h),
+                                          query: query,
+                                          maxLines: 2,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                fontSize: FontSizes.caption,
+                                                color: Brand.textoSecundario(
+                                                  context,
+                                                ),
+                                                height: 1.35,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
           ),
         ],
       ),
@@ -271,173 +275,183 @@ class _Header extends StatelessWidget {
       color: Theme.of(context).appBarTheme.backgroundColor,
       child: SafeArea(
         bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Space.gutter,
-            Space.s,
-            Space.gutter,
-            Space.xs,
-          ),
-          child: Column(
-            children: [
-              // Campo "Número o texto"
-              Container(
-                height: 54,
-                decoration: BoxDecoration(
-                  color: Brand.fondo,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: Space.s),
-                      child: Icon(
-                        Icons.search,
-                        color: Colors.black87,
-                        size: 26,
-                      ),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: controller,
-                        focusNode: focus,
-                        onChanged: onChanged,
-                        onSubmitted: onSubmitted,
-                        keyboardType: numeric
-                            ? TextInputType.number
-                            : TextInputType.text,
-                        textInputAction: TextInputAction.search,
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontSize: 18,
-                        ),
-                        cursorColor: Brand.azul,
-                        decoration: const InputDecoration(
-                          hintText: 'Número o texto',
-                          hintStyle: TextStyle(
-                            color: Colors.black54,
-                            fontSize: 18,
-                          ),
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                    if (controller.text.isNotEmpty)
-                      IconButton(
-                        tooltip: 'Borrar',
-                        icon: const Icon(Icons.close, color: Colors.black87),
-                        onPressed: onClear,
-                      ),
-                    // Cambiar teclado: números ↔ letras.
-                    TextButton(
-                      onPressed: onToggleKeyboard,
-                      style: TextButton.styleFrom(
-                        foregroundColor: Brand.azul,
-                        minimumSize: const Size(52, 40),
-                      ),
-                      child: Text(
-                        numeric ? 'abc' : '123',
-                        semanticsLabel: numeric
-                            ? 'Teclado de letras'
-                            : 'Teclado numérico',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                  ],
-                ),
-              ),
-              const SizedBox(height: Space.s),
-              // Temática: filtro rápido + acceso al índice completo.
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      // 44 px: área táctil cómoda sin perder el aspecto de "píldora".
-                      height: 44,
-                      padding: const EdgeInsets.symmetric(horizontal: Space.m),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD0D3DA),
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String?>(
-                          value: category,
-                          isExpanded: true,
-                          iconEnabledColor: Brand.azul,
-                          dropdownColor: Brand.fondo,
-                          style: const TextStyle(
-                            color: Brand.azul,
-                            fontSize: FontSizes.small,
-                            fontFamily: Brand.fuente,
-                          ),
-                          alignment: Alignment.center,
-                          items: [
-                            const DropdownMenuItem<String?>(
-                              value: null,
-                              alignment: Alignment.center,
-                              child: Text('Temática (todos)'),
-                            ),
-                            for (final c in categories)
-                              DropdownMenuItem<String?>(
-                                value: c,
-                                alignment: Alignment.center,
-                                child: Text(c, overflow: TextOverflow.ellipsis),
-                              ),
-                          ],
-                          onChanged: onCategory,
-                        ),
-                      ),
-                    ),
+        child: ReadableWidth(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Space.gutter,
+              Space.s,
+              Space.gutter,
+              Space.xs,
+            ),
+            child: Column(
+              children: [
+                // Campo "Número o texto"
+                Container(
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: Brand.fondo,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  const SizedBox(width: Space.xs),
-                  SizedBox(
-                    height: 44,
-                    child: FilledButton.tonalIcon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFD0D3DA),
-                        foregroundColor: Brand.azul,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: Space.s,
-                        ),
-                      ),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (_) => TopicsScreen(book: book ?? 'clasico'),
-                        ),
-                      ),
-                      icon: const Icon(Icons.list_alt_rounded, size: 20),
-                      label: const Text('Índice'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: Space.xxs),
-              // Buscar en: Todos / Clásico / CG
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: RadioGroup<String?>(
-                  groupValue: book,
-                  onChanged: onBook,
                   child: Row(
                     children: [
-                      const Text('Buscar en:', style: onBlue),
-                      _radio(null, 'Todos', true),
-                      for (final h in hymnals)
-                        _radio(
-                          h.id,
-                          h.activo ? h.nombreCorto : '${h.nombreCorto} (próx.)',
-                          h.activo,
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: Space.s),
+                        child: Icon(
+                          Icons.search,
+                          color: Colors.black87,
+                          size: 26,
                         ),
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: controller,
+                          focusNode: focus,
+                          onChanged: onChanged,
+                          onSubmitted: onSubmitted,
+                          keyboardType: numeric
+                              ? TextInputType.number
+                              : TextInputType.text,
+                          textInputAction: TextInputAction.search,
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 18,
+                          ),
+                          cursorColor: Brand.azul,
+                          decoration: const InputDecoration(
+                            hintText: 'Número o texto',
+                            hintStyle: TextStyle(
+                              color: Colors.black54,
+                              fontSize: 18,
+                            ),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                      if (controller.text.isNotEmpty)
+                        IconButton(
+                          tooltip: 'Borrar',
+                          icon: const Icon(Icons.close, color: Colors.black87),
+                          onPressed: onClear,
+                        ),
+                      // Cambiar teclado: números ↔ letras.
+                      TextButton(
+                        onPressed: onToggleKeyboard,
+                        style: TextButton.styleFrom(
+                          foregroundColor: Brand.azul,
+                          minimumSize: const Size(52, 40),
+                        ),
+                        child: Text(
+                          numeric ? 'abc' : '123',
+                          semanticsLabel: numeric
+                              ? 'Teclado de letras'
+                              : 'Teclado numérico',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
                     ],
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: Space.s),
+                // Temática: filtro rápido + acceso al índice completo.
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        // 44 px: área táctil cómoda sin perder el aspecto de "píldora".
+                        height: 44,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Space.m,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD0D3DA),
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String?>(
+                            value: category,
+                            isExpanded: true,
+                            iconEnabledColor: Brand.azul,
+                            dropdownColor: Brand.fondo,
+                            style: const TextStyle(
+                              color: Brand.azul,
+                              fontSize: FontSizes.small,
+                              fontFamily: Brand.fuente,
+                            ),
+                            alignment: Alignment.center,
+                            items: [
+                              const DropdownMenuItem<String?>(
+                                value: null,
+                                alignment: Alignment.center,
+                                child: Text('Temática (todos)'),
+                              ),
+                              for (final c in categories)
+                                DropdownMenuItem<String?>(
+                                  value: c,
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    c,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                            ],
+                            onChanged: onCategory,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: Space.xs),
+                    SizedBox(
+                      height: 44,
+                      child: FilledButton.tonalIcon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFD0D3DA),
+                          foregroundColor: Brand.azul,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Space.s,
+                          ),
+                        ),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) =>
+                                TopicsScreen(book: book ?? 'clasico'),
+                          ),
+                        ),
+                        icon: const Icon(Icons.list_alt_rounded, size: 20),
+                        label: const Text('Índice'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Space.xxs),
+                // Buscar en: Todos / Clásico / CG
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: RadioGroup<String?>(
+                    groupValue: book,
+                    onChanged: onBook,
+                    child: Row(
+                      children: [
+                        const Text('Buscar en:', style: onBlue),
+                        _radio(null, 'Todos', true),
+                        for (final h in hymnals)
+                          _radio(
+                            h.id,
+                            h.activo
+                                ? h.nombreCorto
+                                : '${h.nombreCorto} (próx.)',
+                            h.activo,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

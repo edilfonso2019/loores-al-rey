@@ -80,17 +80,18 @@ def por_pulsos(ruta, cuadros, fps):
     tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units="time")
     dur = len(y) / sr
     bordes = np.concatenate([[0.0], beats, [dur]])
-    seg = []
+    seg, pulsos = [], []
     for a, b in zip(bordes[:-1], bordes[1:]):
         i0, i1 = int(a / fps), max(int(a / fps) + 1, int(b / fps))
         trozo = [simplificar(c) for c in cuadros[i0:i1]]
         trozo = [c for c in trozo if c]
         acorde = max(set(trozo), key=trozo.count) if trozo else None
+        pulsos.append([round(float(a), 2), acorde])
         if seg and seg[-1]["acorde"] == acorde:
             seg[-1]["fin"] = round(float(b), 2)
         else:
             seg.append({"inicio": round(float(a), 2), "fin": round(float(b), 2), "acorde": acorde})
-    return [s for s in seg if s["acorde"]], float(np.atleast_1d(tempo)[0])
+    return [s for s in seg if s["acorde"]], float(np.atleast_1d(tempo)[0]), pulsos
 
 
 def tonalidad(tono):
@@ -121,7 +122,7 @@ def main(numeros):
         h = himnos[n]
         ruta = os.path.join(AQUI, "pistas", f"{n}.mp3")
         cuadros, fps = reconocer(ruta, modelo, config, mean, std)
-        segs, tempo = por_pulsos(ruta, cuadros, fps)
+        segs, tempo, pulsos = por_pulsos(ruta, cuadros, fps)
         tonica, modo = tonalidad(h["tono"])
         tiempo = {}
         for s in segs:
@@ -139,7 +140,8 @@ def main(numeros):
             "top": sorted(((k, round(v / total * 100, 1)) for k, v in tiempo.items()), key=lambda x: -x[1])[:6],
         }
         resumen.append(res)
-        json.dump({"n": n, "titulo": h["t"], "tono": h["tono"], "acordes": segs},
+        json.dump({"n": n, "titulo": h["t"], "tono": h["tono"], "compas": h.get("compas"),
+                   "tempo": round(tempo), "acordes": segs, "pulsos": pulsos},
                   open(os.path.join(AQUI, "salida", f"{n}.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         print(f"{n:>4} {h['t'][:30]:30} tono={res['tonica_esperada']:4} mas_usado={principal:5} final={ultimo:5} "
               f"en_tono={res['pct_en_tonalidad']:5}% cambios={len(segs)}")

@@ -46,97 +46,101 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView(
-        children: [
-          header('CONFIGURACIÓN GLOBAL:'),
-          ListTile(
-            leading: const Icon(Icons.palette),
-            title: const Text('Color de fondo'),
-            trailing: Text(
-              s.background.label,
-              style: const TextStyle(color: Brand.azulClaro),
+      body: ReadableWidth(
+        child: ListView(
+          children: [
+            header('CONFIGURACIÓN GLOBAL:'),
+            ListTile(
+              leading: const Icon(Icons.palette),
+              title: const Text('Color de fondo'),
+              trailing: Text(
+                s.background.label,
+                style: const TextStyle(color: Brand.azulClaro),
+              ),
+              onTap: () => _pickBackground(context, s),
             ),
-            onTap: () => _pickBackground(context, s),
-          ),
-          ListTile(
-            leading: const Icon(Icons.text_fields),
-            title: const Text('Tamaño del texto'),
-            trailing: Text(
-              '${s.fontSize.round()}',
-              style: const TextStyle(color: Brand.azulClaro),
+            ListTile(
+              leading: const Icon(Icons.text_fields),
+              title: const Text('Tamaño del texto'),
+              trailing: Text(
+                '${s.fontSize.round()}',
+                style: const TextStyle(color: Brand.azulClaro),
+              ),
+              onTap: () => _pickFont(context),
             ),
-            onTap: () => _pickFont(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.dark_mode_outlined),
-            title: const Text('Tema de la app'),
-            trailing: Text(switch (s.themeMode) {
-              ThemeMode.light => 'Claro',
-              ThemeMode.dark => 'Oscuro',
-              _ => 'Sistema',
-            }, style: const TextStyle(color: Brand.azulClaro)),
-            onTap: () => _pickTheme(context, s),
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.menu_book),
-            title: const Text('Modo básico'),
-            subtitle: const Text('Solo letra, sin reproductor'),
-            value: s.basicMode,
-            onChanged: s.setBasicMode,
-          ),
-          ListTile(
-            leading: const Icon(Icons.download),
-            title: const Text('Administrador de descargas'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(builder: (_) => const DownloadsScreen()),
+            ListTile(
+              leading: const Icon(Icons.dark_mode_outlined),
+              title: const Text('Tema de la app'),
+              trailing: Text(switch (s.themeMode) {
+                ThemeMode.light => 'Claro',
+                ThemeMode.dark => 'Oscuro',
+                _ => 'Sistema',
+              }, style: const TextStyle(color: Brand.azulClaro)),
+              onTap: () => _pickTheme(context, s),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.cloud_upload),
-            title: const Text('Sincronizar y respaldar playlists'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(builder: (_) => const BackupScreen()),
+            SwitchListTile(
+              secondary: const Icon(Icons.menu_book),
+              title: const Text('Modo básico'),
+              subtitle: const Text('Solo letra, sin reproductor'),
+              value: s.basicMode,
+              onChanged: s.setBasicMode,
             ),
-          ),
-          // Donación: oculto en v1.
-          header('REPRODUCTOR'),
-          const _NotificationPermissionTile(),
-          SwitchListTile(
-            secondary: const Icon(Icons.play_arrow),
-            title: const Text('Tocar continuamente'),
-            subtitle: const Text('Al terminar, pasa al siguiente himno'),
-            value: s.continuousPlay,
-            onChanged: s.setContinuousPlay,
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.minimize),
-            title: const Text('Modo minimizado'),
-            subtitle: const Text('La música sigue al salir del himno'),
-            value: s.minimizedMode,
-            onChanged: s.setMinimizedMode,
-          ),
-          ListTile(
-            leading: const Icon(Icons.star),
-            title: const Text('Calificar esta App'),
-            onTap: () => showSnack(
-              context,
-              'Podrás calificarla cuando esté en Play Store.',
+            ListTile(
+              leading: const Icon(Icons.download),
+              title: const Text('Administrador de descargas'),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const DownloadsScreen(),
+                ),
+              ),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.info),
-            title: const Text('Acerca de esta App'),
-            onTap: () => showAboutDialog(
-              context: context,
-              applicationName: 'Loores al Rey',
-              applicationVersion: '0.1.0',
-              applicationLegalese:
-                  'Himnario de la Iglesia Adventista del Séptimo Día Movimiento de Reforma.\nSin anuncios.',
+            ListTile(
+              leading: const Icon(Icons.cloud_upload),
+              title: const Text('Sincronizar y respaldar playlists'),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(builder: (_) => const BackupScreen()),
+              ),
             ),
-          ),
-        ],
+            // Donación: oculto en v1.
+            header('REPRODUCTOR'),
+            const _NotificationPermissionTile(),
+            SwitchListTile(
+              secondary: const Icon(Icons.play_arrow),
+              title: const Text('Tocar continuamente'),
+              subtitle: const Text('Al terminar, pasa al siguiente himno'),
+              value: s.continuousPlay,
+              onChanged: s.setContinuousPlay,
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.minimize),
+              title: const Text('Modo minimizado'),
+              subtitle: const Text('La música sigue al salir del himno'),
+              value: s.minimizedMode,
+              onChanged: s.setMinimizedMode,
+            ),
+            ListTile(
+              leading: const Icon(Icons.star),
+              title: const Text('Calificar esta App'),
+              onTap: () => showSnack(
+                context,
+                'Podrás calificarla cuando esté en Play Store.',
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.info),
+              title: const Text('Acerca de esta App'),
+              onTap: () => showAboutDialog(
+                context: context,
+                applicationName: 'Loores al Rey',
+                applicationVersion: '0.1.0',
+                applicationLegalese:
+                    'Himnario de la Iglesia Adventista del Séptimo Día Movimiento de Reforma.\nSin anuncios.',
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
