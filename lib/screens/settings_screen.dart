@@ -97,7 +97,9 @@ class SettingsScreen extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.cloud_upload),
-              title: const Text('Sincronizar y respaldar playlists'),
+              // "Listas" como en el resto de la app (no "playlists").
+              title: const Text('Respaldar favoritos y listas'),
+              subtitle: const Text('En un archivo o en Google Drive'),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute<void>(builder: (_) => const BackupScreen()),
@@ -114,20 +116,15 @@ class SettingsScreen extends StatelessWidget {
               onChanged: s.setContinuousPlay,
             ),
             SwitchListTile(
-              secondary: const Icon(Icons.minimize),
+              secondary: const Icon(Icons.headphones_rounded),
               title: const Text('Modo minimizado'),
               subtitle: const Text('La música sigue al salir del himno'),
               value: s.minimizedMode,
               onChanged: s.setMinimizedMode,
             ),
-            ListTile(
-              leading: const Icon(Icons.star),
-              title: const Text('Calificar esta App'),
-              onTap: () => showSnack(
-                context,
-                'Podrás calificarla cuando esté en Play Store.',
-              ),
-            ),
+            // "Calificar esta App": oculto hasta publicar en Play Store (una
+            // opción que no hace nada confunde más de lo que ayuda).
+            header('LA APP'),
             ListTile(
               leading: const Icon(Icons.info),
               title: const Text('Acerca de esta App'),

@@ -231,6 +231,12 @@ class MediaService extends ChangeNotifier {
             .timeout(const Duration(seconds: 10));
         if (res.statusCode == 200) _available[id] = true;
         if (res.statusCode == 404) _available[id] = false;
+        // Otro código (500, 502…): hay internet pero el servidor falla.
+        if (res.statusCode != 200 && res.statusCode != 404) {
+          _serverErrors.add(id);
+        } else {
+          _serverErrors.remove(id);
+        }
         return _available[id];
       } catch (_) {
         return null; // Sin conexión: no se cachea.
@@ -240,6 +246,12 @@ class MediaService extends ChangeNotifier {
       }
     }();
   }
+
+  final Set<String> _serverErrors = {};
+
+  /// true si la última consulta llegó al servidor pero este respondió con
+  /// un error (no es falta de internet).
+  bool serverFailed(Hymn h, MediaKind k) => _serverErrors.contains(key(h, k));
 
   final Set<String> _prefetched = {};
 

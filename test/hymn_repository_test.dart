@@ -74,7 +74,7 @@ void main() {
     expect(h1.autorMostrado, 'Juan Hatton');
     expect(h1.tonoLargo, 'Re mayor · 4/4');
     expect(h1.tonoCorto, 'Re M · 4/4');
-    expect(repo.find('clasico', 3)!.tonoCorto, 'Si♭ M · 4/4');
+    expect(repo.find('clasico', 3)!.tonoCorto, 'Sib M · 4/4');
     // Partitura sin autor: se muestra "Autor desconocido".
     expect(repo.find('clasico', 541)!.autorMostrado, 'Autor desconocido');
     // Himnos aún sin datos.
@@ -90,8 +90,8 @@ void main() {
   });
 
   test('abreviatura de tonalidades', () {
-    expect(Hymn.abreviar('Do sostenido menor'), 'Do♯ m');
-    expect(Hymn.abreviar('Mi bemol menor'), 'Mi♭ m');
+    expect(Hymn.abreviar('Do sostenido menor'), 'Do# m');
+    expect(Hymn.abreviar('Mi bemol menor'), 'Mib m');
     expect(Hymn.abreviar(null), isNull);
   });
 }

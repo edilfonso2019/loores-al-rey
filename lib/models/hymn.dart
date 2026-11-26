@@ -166,7 +166,7 @@ class Hymn {
       ? null
       : (autor == 'Desconocido' ? 'Autor desconocido' : autor);
 
-  /// Versión corta, como en la partitura: "Si♭ M · 4/4".
+  /// Versión corta: "Sib M · 4/4" (b y # en texto: la fuente no trae ♭ ♯).
   String? get tonoCorto => _tonoCompas(abreviar(tono));
 
   /// Versión completa: "Si bemol mayor · 4/4".
@@ -177,12 +177,12 @@ class Hymn {
     return parts.isEmpty ? null : parts.join(' · ');
   }
 
-  /// "Si bemol mayor" → "Si♭ M"; "Do sostenido menor" → "Do♯ m".
+  /// "Si bemol mayor" → "Sib M"; "Do sostenido menor" → "Do# m".
   static String? abreviar(String? tono) {
     if (tono == null) return null;
     return tono
-        .replaceAll(' bemol', '♭')
-        .replaceAll(' sostenido', '♯')
+        .replaceAll(' bemol', 'b')
+        .replaceAll(' sostenido', '#')
         .replaceAll(RegExp(r' mayor$'), ' M')
         .replaceAll(RegExp(r' menor$'), ' m');
   }

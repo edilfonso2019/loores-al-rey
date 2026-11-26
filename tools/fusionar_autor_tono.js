@@ -27,6 +27,9 @@ const CORRECCIONES_AUTOR = {
   'L. Masón': 'L. Mason',
   'Melodía arreglada por L. Masón': 'Melodía arreglada por L. Mason',
   'Juan Marron': 'Juan Marrón',
+  'Melodía inglesia': 'Melodía inglesa',
+  'Melodía arregalda por Samuel Dyer': 'Melodía arreglada por Samuel Dyer',
+  'Franz Cruber': 'Franz Gruber',
 };
 
 // Correcciones de título en clasico.json (el dato original estaba mal).

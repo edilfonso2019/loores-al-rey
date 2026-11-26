@@ -228,11 +228,19 @@ class PlaylistScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final pl = state.playlist(playlistId);
-    if (pl == null) return const Scaffold(body: SizedBox.shrink());
+    if (pl == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Lista de culto')),
+        body: const _Empty(
+          icon: Icons.playlist_remove_rounded,
+          text: 'Esta lista ya no existe.',
+        ),
+      );
+    }
     final repo = HymnRepository.instance;
     final hymns = [for (final id in pl.items) repo.byId(id)];
     final player = context.watch<PlayerService>();
-    final playingHere = player.queueName == pl.name && player.hasQueue
+    final playingHere = player.queueId == pl.id && player.hasQueue
         ? player.queueIndex
         : -1;
     return Scaffold(
@@ -286,6 +294,7 @@ class PlaylistScreen extends StatelessWidget {
               onPressed: () => context.read<PlayerService>().playQueue(
                 pl.items,
                 name: pl.name,
+                id: pl.id,
               ),
             ),
       body: ReadableWidth(
@@ -341,6 +350,7 @@ class PlaylistScreen extends StatelessWidget {
                               pl.items,
                               index: i,
                               name: pl.name,
+                              id: pl.id,
                             ),
                       trailing: ReorderableDragStartListener(
                         index: i,

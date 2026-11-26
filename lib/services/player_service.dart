@@ -48,6 +48,9 @@ class PlayerService extends ChangeNotifier {
   int queueIndex = -1;
   String? queueName;
 
+  /// Id de la lista de culto que suena (para resaltarla); null = ninguna.
+  String? queueId;
+
   bool loading = false;
   String? error;
 
@@ -66,7 +69,11 @@ class PlayerService extends ChangeNotifier {
       queue = const [];
       queueIndex = -1;
       queueName = null;
+      queueId = null;
     }
+    // Que no siga sonando el himno anterior mientras se carga este (o si
+    // este no está disponible).
+    if (player.playing) unawaited(player.pause());
     current = h;
     kind = k;
     error = null;
@@ -85,8 +92,10 @@ class PlayerService extends ChangeNotifier {
           throw MediaNotAvailable(MediaService.notAvailableMessage(h, k));
         }
         if (ok == null) {
-          throw const MediaNotAvailable(
-            'Sin conexión. Descarga la pista para escucharla sin internet.',
+          throw MediaNotAvailable(
+            _media.serverFailed(h, k)
+                ? 'El servidor no responde. Inténtalo más tarde.'
+                : 'Sin conexión. Descarga la pista para escucharla sin internet.',
           );
         }
       }
@@ -111,8 +120,10 @@ class PlayerService extends ChangeNotifier {
       notifyListeners();
       unawaited(player.play());
     } on MediaNotAvailable catch (e) {
-      _fail(e.message);
+      if (isCurrent(h, k)) _fail(e.message);
     } catch (_) {
+      // Una carga vieja interrumpida por otra más nueva no es un error.
+      if (!isCurrent(h, k)) return;
       _fail(
         _media.isDownloaded(h, k)
             ? 'No se pudo abrir el archivo descargado.'
@@ -132,9 +143,11 @@ class PlayerService extends ChangeNotifier {
     List<String> ids, {
     int index = 0,
     String? name,
+    String? id,
     MediaKind k = MediaKind.instrumental,
   }) async {
     if (ids.isEmpty) return;
+    queueId = id;
     queue = List.of(ids);
     queueIndex = index.clamp(0, ids.length - 1);
     queueName = name;
@@ -166,6 +179,7 @@ class PlayerService extends ChangeNotifier {
     queue = const [];
     queueIndex = -1;
     queueName = null;
+    queueId = null;
     error = null;
     notifyListeners();
   }

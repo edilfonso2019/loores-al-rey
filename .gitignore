@@ -24,3 +24,6 @@ assets/audio/*
 !assets/audio/.gitkeep
 # SO
 .DS_Store
+
+# Capturas de revisión de diseño (se regeneran con tool/capturas)
+tool/capturas/salida/

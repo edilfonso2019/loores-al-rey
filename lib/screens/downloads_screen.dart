@@ -119,7 +119,8 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
                   child: Text(
                     'Lo ya descargado se conserva donde está. Las descargas se '
-                    'borran si desinstalas la app. En total: ${formatBytes(totalBytes)}.',
+                    'borran si desinstalas la app.'
+                    '${totalBytes > 0 ? ' En total: ${formatBytes(totalBytes)}.' : ''}',
                     style: TextStyle(
                       fontSize: FontSizes.caption,
                       color: secondary,
@@ -137,17 +138,14 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       ButtonSegment(
                         value: MediaKind.instrumental,
                         label: Text('Instrumental'),
-                        icon: Icon(Icons.piano_rounded),
                       ),
                       ButtonSegment(
                         value: MediaKind.cantado,
                         label: Text('Cantado'),
-                        icon: Icon(Icons.mic_rounded),
                       ),
                       ButtonSegment(
                         value: MediaKind.partitura,
                         label: Text('Partituras'),
-                        icon: Icon(Icons.picture_as_pdf_rounded),
                       ),
                     ],
                     selected: {_kind},
@@ -207,10 +205,11 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                               ),
                             ),
                           ),
-                        Row(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Expanded(
-                              child: FilledButton.icon(
+                            Builder(
+                              builder: (_) => FilledButton.icon(
                                 style: FilledButton.styleFrom(
                                   minimumSize: const Size(0, Space.touch),
                                 ),
@@ -222,9 +221,9 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                                 label: const Text('Descargar todos'),
                               ),
                             ),
-                            const SizedBox(width: Space.s),
-                            Expanded(
-                              child: OutlinedButton.icon(
+                            const SizedBox(height: Space.s),
+                            Builder(
+                              builder: (_) => OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(
                                   minimumSize: const Size(0, Space.touch),
                                 ),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../services/app_state.dart';
 import '../services/backup_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 
 /// Sincronizar y respaldar: archivo y Google Drive.
@@ -47,9 +48,7 @@ class _BackupScreenState extends State<BackupScreen> {
                     'Las descargas de audio no se incluyen.',
                   ),
                 ),
-                const ListTile(
-                  title: Text('ARCHIVO', style: TextStyle(fontSize: 12)),
-                ),
+                const _SectionTitle('ARCHIVO'),
                 ListTile(
                   leading: const Icon(Icons.save_alt),
                   title: const Text('Exportar a un archivo'),
@@ -81,9 +80,7 @@ class _BackupScreenState extends State<BackupScreen> {
                           );
                         },
                 ),
-                const ListTile(
-                  title: Text('GOOGLE DRIVE', style: TextStyle(fontSize: 12)),
-                ),
+                const _SectionTitle('GOOGLE DRIVE'),
                 if (last != null)
                   ListTile(
                     leading: const Icon(Icons.check_circle_outline),
@@ -137,4 +134,28 @@ class _BackupScreenState extends State<BackupScreen> {
       ),
     );
   }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      Space.gutter,
+      Space.l,
+      Space.gutter,
+      Space.xs,
+    ),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontSize: FontSizes.caption,
+        fontWeight: FontWeight.w700,
+        letterSpacing: .6,
+        color: Brand.textoSecundario(context),
+      ),
+    ),
+  );
 }
