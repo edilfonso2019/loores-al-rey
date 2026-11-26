@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import '../config.dart';
 import '../models/hymn.dart';
 
 /// Carga los himnarios desde `assets/data/*.json` y expone búsqueda offline.
@@ -20,7 +21,7 @@ class HymnRepository {
     if (_loaded) return;
     final b = bundle ?? rootBundle;
     for (final id in ids) {
-      final raw = await b.loadString('assets/data/$id.json');
+      final raw = await b.loadString('${kAssetPrefix}assets/data/$id.json');
       final hymnal = Hymnal.fromJson(jsonDecode(raw) as Map<String, dynamic>);
       _hymnals[id] = hymnal;
       for (final h in hymnal.himnos) {

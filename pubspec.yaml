@@ -41,6 +41,7 @@ flutter:
     - assets/data/clasico.json
     - assets/data/cg.json
     - assets/data/sincronizacion.json
+    - assets/data/acordes.json
     - assets/images/portada_violin.jpg
   fonts:
     - family: NotoSans

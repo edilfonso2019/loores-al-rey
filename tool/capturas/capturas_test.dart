@@ -1,3 +1,4 @@
+import 'dart:convert';
 // Capturas de pantalla para revisar el diseño (no es parte de `flutter test`).
 //
 //   flutter test tool/capturas/capturas_test.dart --update-goldens
@@ -67,8 +68,9 @@ Future<void> _setup() async {
   SharedPreferences.setMockInitialValues({
     'favorites': ['clasico-131', 'clasico-1', 'clasico-219'],
     'history': ['clasico-249', 'clasico-131', 'clasico-8', 'clasico-791'],
-    'playlists':
-        '[${Playlist(id: '1', name: 'Culto sábado', items: ['clasico-25', 'clasico-131', 'clasico-32']).toJson().toString().replaceAll("'", '"')}]',
+    'playlists': jsonEncode([
+      Playlist(id: '1', name: 'Culto sábado', items: ['clasico-25', 'clasico-131', 'clasico-32']).toJson(),
+    ]),
   });
   state = AppState();
   await state.init();

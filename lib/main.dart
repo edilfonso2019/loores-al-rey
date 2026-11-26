@@ -14,6 +14,9 @@ import 'services/media_service.dart';
 import 'services/player_service.dart';
 import 'theme/app_theme.dart';
 
+/// Oyentes que viven toda la app (se guardan para que no se descarten).
+final List<AppLifecycleListener> _oyentes = [];
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // De borde a borde: la barra inferior de la app se extiende detrás de los
@@ -49,6 +52,8 @@ Future<void> main() async {
       await rootBundle.loadString('assets/data/sincronizacion.json'),
     );
   } catch (_) {}
+  // Al volver a la app: ¿la otra app de la familia descargó algo mientras tanto?
+  _oyentes.add(AppLifecycleListener(onResume: media.refreshShared));
   runApp(
     MultiProvider(
       providers: [

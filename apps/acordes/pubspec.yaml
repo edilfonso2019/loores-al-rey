@@ -1,0 +1,57 @@
+name: acordes
+description: "Acordes IASDMR: acordes de los himnos para músicos (familia Loores al Rey)."
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  # Todo el código común (himnos, descargas, reproductor, pantalla de acordes)
+  # vive en la app Loores al Rey, en la raíz del repositorio.
+  loores_al_rey:
+    path: ../..
+  provider: ^6.1.2
+  shared_preferences: ^2.3.2
+  audio_service: ^0.18.19
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  # Los datos (clasico.json, acordes.json) llegan del paquete loores_al_rey
+  # (packages/loores_al_rey/assets/...). Las fuentes se declaran aquí porque
+  # el tema usa la familia "NotoSans" sin prefijo de paquete.
+  fonts:
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/NotoSans-Regular.ttf
+        - asset: assets/fonts/NotoSans-Italic.ttf
+          style: italic
+        - asset: assets/fonts/NotoSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/NotoSans-Bold.ttf
+          weight: 700
+    - family: GreatVibes
+      fonts:
+        - asset: assets/fonts/GreatVibes-Regular.ttf
+
+# Ícono: regenerar con `dart run flutter_launcher_icons` (dentro de apps/acordes).
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/icon/icono.png
+  adaptive_icon_background: "#F1BE48"
+  adaptive_icon_foreground: assets/icon/icono_frente.png
+  min_sdk_android: 21

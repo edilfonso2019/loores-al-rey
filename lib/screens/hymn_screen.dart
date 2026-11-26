@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../config.dart';
+import '../data/chords_repository.dart';
 import '../data/hymn_repository.dart';
 import '../models/hymn.dart';
 import '../services/app_state.dart';
@@ -11,6 +14,7 @@ import '../services/player_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/score_view.dart';
+import 'chords_screen.dart';
 import 'projection_screen.dart';
 import 'shell_screen.dart';
 
@@ -31,6 +35,21 @@ class _HymnScreenState extends State<HymnScreen> {
   late final PlayerService _player;
   late final AppState _state;
 
+  /// El corazón se esconde al bajar por la letra (no tapa el texto) y
+  /// reaparece al subir.
+  bool _favVisible = true;
+
+  bool _onScroll(UserScrollNotification n) {
+    // Al detenerse (idle) se mantiene como estaba: ahí es cuando se lee.
+    final show = switch (n.direction) {
+      ScrollDirection.forward => true,
+      ScrollDirection.reverse => false,
+      ScrollDirection.idle => _favVisible,
+    };
+    if (show != _favVisible) setState(() => _favVisible = show);
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -41,7 +60,18 @@ class _HymnScreenState extends State<HymnScreen> {
     );
     // Mientras se canta, que la pantalla no se apague.
     WakelockPlus.enable();
+    // Los acordes se cargan aparte; al terminar aparece el botón "Acordes".
+    if (!ChordsRepository.instance.isLoaded) {
+      ChordsRepository.instance.load().then((_) {
+        if (mounted) setState(() {});
+      });
+    }
   }
+
+  void _openChords(Hymn h) => Navigator.push(
+    context,
+    MaterialPageRoute<void>(builder: (_) => ChordsScreen(hymn: h)),
+  ).then((_) => WakelockPlus.enable());
 
   @override
   void dispose() {
@@ -55,7 +85,10 @@ class _HymnScreenState extends State<HymnScreen> {
 
   void _goTo(Hymn? h) {
     if (h == null) return;
-    setState(() => _hymn = h);
+    setState(() {
+      _hymn = h;
+      _favVisible = true; // el himno nuevo empieza arriba
+    });
     _state.pushHistory(h.id);
   }
 
@@ -82,6 +115,7 @@ class _HymnScreenState extends State<HymnScreen> {
     final basic = state.basicMode;
     final showScore = !basic && _kind == MediaKind.partitura;
     final bg = state.background;
+    final hasChords = ChordsRepository.instance.has(h.id);
     return Scaffold(
       backgroundColor: showScore ? null : bg.background,
       appBar: AppBar(
@@ -92,6 +126,12 @@ class _HymnScreenState extends State<HymnScreen> {
         ),
         title: Text('Himno # ${h.number} - ${hymnal?.nombreCorto ?? ''}'),
         actions: [
+          if (hasChords)
+            IconButton(
+              tooltip: 'Acordes y letra con acordes',
+              icon: const Icon(Icons.queue_music_rounded, size: 28),
+              onPressed: () => _openChords(h),
+            ),
           IconButton(
             tooltip: 'Buscar',
             icon: const Icon(Icons.search_rounded, size: 28),
@@ -103,6 +143,8 @@ class _HymnScreenState extends State<HymnScreen> {
           PopupMenuButton<String>(
             onSelected: (v) {
               switch (v) {
+                case 'acordes':
+                  _openChords(h);
                 case 'lista':
                   showAddToPlaylist(context, h);
                 case 'compartir':
@@ -121,36 +163,44 @@ class _HymnScreenState extends State<HymnScreen> {
                   _goTo(HymnRepository.instance.neighbor(h, 1));
               }
             },
-            itemBuilder: (_) => const [
-              PopupMenuItem(
+            itemBuilder: (_) => [
+              if (hasChords)
+                const PopupMenuItem(
+                  value: 'acordes',
+                  child: ListTile(
+                    leading: Icon(Icons.queue_music_rounded),
+                    title: Text('Acordes (guitarra)'),
+                  ),
+                ),
+              const PopupMenuItem(
                 value: 'lista',
                 child: ListTile(
                   leading: Icon(Icons.playlist_add),
                   title: Text('Agregar a lista de culto'),
                 ),
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'compartir',
                 child: ListTile(
                   leading: Icon(Icons.share),
                   title: Text('Compartir letra'),
                 ),
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'proyectar',
                 child: ListTile(
                   leading: Icon(Icons.cast),
                   title: Text('Modo proyección'),
                 ),
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'anterior',
                 child: ListTile(
                   leading: Icon(Icons.skip_previous),
                   title: Text('Himno anterior'),
                 ),
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'siguiente',
                 child: ListTile(
                   leading: Icon(Icons.skip_next),
@@ -179,12 +229,15 @@ class _HymnScreenState extends State<HymnScreen> {
                           HymnRepository.instance.neighbor(h, v < 0 ? 1 : -1),
                         );
                       },
-                      child: _Lyrics(
-                        key: ValueKey('ly-${h.id}'),
-                        hymn: h,
-                        fontSize: state.fontSize,
-                        color: bg.foreground,
-                        onNavigate: _goTo,
+                      child: NotificationListener<UserScrollNotification>(
+                        onNotification: _onScroll,
+                        child: _Lyrics(
+                          key: ValueKey('ly-${h.id}'),
+                          hymn: h,
+                          fontSize: state.fontSize,
+                          color: bg.foreground,
+                          onNavigate: _goTo,
+                        ),
                       ),
                     ),
                   ),
@@ -192,7 +245,18 @@ class _HymnScreenState extends State<HymnScreen> {
           Positioned(
             left: Space.m,
             bottom: Space.m,
-            child: _FavoriteButton(id: h.id),
+            child: AnimatedSlide(
+              offset: _favVisible || showScore
+                  ? Offset.zero
+                  : const Offset(0, 2),
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              child: AnimatedOpacity(
+                opacity: _favVisible || showScore ? 1 : 0,
+                duration: const Duration(milliseconds: 180),
+                child: _FavoriteButton(id: h.id),
+              ),
+            ),
           ),
         ],
       ),
@@ -577,6 +641,18 @@ class _DownloadButton extends StatelessWidget {
             value: progress == 0 ? null : progress,
             strokeWidth: 3,
           ),
+        ),
+      );
+    }
+    // Ya lo descargó la otra app de la familia: se usa ese, sin duplicar.
+    if (media.isShared(hymn, kind)) {
+      return _RoundButton(
+        tooltip: 'Disponible sin conexión (descargado en ${otherAppName()})',
+        icon: Icons.offline_pin_rounded,
+        filled: false,
+        onPressed: () => showSnack(
+          context,
+          'Ya está descargado en ${otherAppName()}: se usa sin volver a descargarlo.',
         ),
       );
     }

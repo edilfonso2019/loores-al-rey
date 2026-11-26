@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/hymn_repository.dart';
 import '../models/hymn.dart';
+import 'shared_downloads.dart';
 
 /// Tipo de recurso por himno.
 enum MediaKind {
@@ -54,18 +55,27 @@ class DownloadedItem {
 /// Archivos en `<raíz>/descargas/<himnario>/<tipo>/<n>.<ext>`, donde la raíz
 /// es la memoria interna de la app o su carpeta en la tarjeta SD. Cada
 /// descarga recuerda dónde quedó: cambiar de ubicación no pierde las previas.
+///
+/// Si la otra app de la familia (Loores al Rey / Acordes IASDMR) ya descargó
+/// un recurso, se usa ese ([isShared]) y no se descarga dos veces.
 class MediaService extends ChangeNotifier {
   MediaService({
     http.Client? client,
     Future<Directory> Function()? baseDir,
     Future<List<Directory>?> Function()? externalDirs,
+    SharedDownloads? shared,
   }) : _client = client ?? http.Client(),
+       _sharedSource = shared ?? const SharedDownloads(),
        _baseDir = baseDir ?? getApplicationDocumentsDirectory,
        _externalDirs = externalDirs ?? _defaultExternalDirs;
 
   final http.Client _client;
   final Future<Directory> Function() _baseDir;
   final Future<List<Directory>?> Function() _externalDirs;
+  final SharedDownloads _sharedSource;
+
+  /// Descargas de la otra app de la familia: clave → archivo.
+  final Map<String, SharedFile> _shared = {};
   Directory? _internalRoot;
   Directory? _externalRoot;
   SharedPreferences? _prefs;
@@ -136,7 +146,36 @@ class MediaService extends ChangeNotifier {
     for (final root in [?_internalRoot, ?_externalRoot]) {
       await _scan(root);
     }
+    await refreshShared();
     notifyListeners();
+  }
+
+  /// Vuelve a consultar qué tiene descargado la otra app (al abrir la app o
+  /// al volver a ella, por si mientras tanto descargó algo).
+  Future<void> refreshShared() async {
+    final files = await _sharedSource.list();
+    _shared.clear();
+    for (final f in files) {
+      final parts = f.path.split('/');
+      if (parts.length != 3) continue;
+      final n = p.basenameWithoutExtension(parts[2]);
+      _shared['${parts[0]}-$n-${parts[1]}'] = f;
+    }
+    notifyListeners();
+  }
+
+  /// true si NO está descargado aquí pero sí en la otra app de la familia.
+  bool isShared(Hymn h, MediaKind k) =>
+      !isDownloaded(h, k) && _shared.containsKey(key(h, k));
+
+  /// Descargado aquí o en la otra app: se puede usar sin internet.
+  bool isOffline(Hymn h, MediaKind k) =>
+      isDownloaded(h, k) || _shared.containsKey(key(h, k));
+
+  /// Contenido de un recurso de la otra app (para la partitura PDF).
+  Future<Uint8List?> readShared(Hymn h, MediaKind k) async {
+    final f = _shared[key(h, k)];
+    return f == null ? null : _sharedSource.read(f);
   }
 
   /// Registra los archivos ya descargados en [root].
@@ -191,10 +230,13 @@ class MediaService extends ChangeNotifier {
   /// Archivo local si está descargado.
   File? localFile(Hymn h, MediaKind k) => _downloaded[key(h, k)];
 
-  /// URI para reproducir/mostrar: local si existe, si no el servidor.
+  /// URI para reproducir/mostrar: local si existe, luego la descarga de la
+  /// otra app y por último el servidor.
   Uri? sourceUri(Hymn h, MediaKind k) {
     final f = localFile(h, k);
     if (f != null) return Uri.file(f.path);
+    final shared = _shared[key(h, k)];
+    if (shared != null) return shared.uri;
     final url = remoteUrl(h, k);
     return url == null ? null : Uri.parse(url);
   }
@@ -212,12 +254,12 @@ class MediaService extends ChangeNotifier {
   final Map<String, Future<bool?>> _checking = {};
 
   bool? availability(Hymn h, MediaKind k) =>
-      isDownloaded(h, k) ? true : _available[key(h, k)];
+      isOffline(h, k) ? true : _available[key(h, k)];
 
   /// Consulta al servidor (HEAD) si el recurso existe. Cachea la respuesta.
   Future<bool?> checkAvailable(Hymn h, MediaKind k) {
     final id = key(h, k);
-    if (isDownloaded(h, k)) return Future.value(true);
+    if (isOffline(h, k)) return Future.value(true);
     if (_available.containsKey(id)) return Future.value(_available[id]);
     return _checking[id] ??= () async {
       try {
@@ -258,7 +300,7 @@ class MediaService extends ChangeNotifier {
   /// Comprueba la disponibilidad una sola vez por sesión (para la UI).
   void prefetchAvailability(Hymn h, MediaKind k) {
     final id = key(h, k);
-    if (isDownloaded(h, k) ||
+    if (isOffline(h, k) ||
         _available.containsKey(id) ||
         !_prefetched.add(id)) {
       return;
@@ -405,7 +447,8 @@ class MediaService extends ChangeNotifier {
     bulkKind = kind;
     bulkError = null;
     _bulkCancel = false;
-    final pending = hymns.where((h) => !isDownloaded(h, kind)).toList();
+    // Lo que ya tiene la otra app no se vuelve a descargar.
+    final pending = hymns.where((h) => !isOffline(h, kind)).toList();
     bulkTotal = pending.length;
     bulkDone = 0;
     var ok = 0;

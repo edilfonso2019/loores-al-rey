@@ -32,17 +32,24 @@ final Map<String, List<ScorePage>> _cache = {};
 
 Future<List<ScorePage>> loadScorePages(MediaService media, Hymn hymn) async {
   final local = media.localFile(hymn, MediaKind.partitura);
+  final shared = media.isShared(hymn, MediaKind.partitura);
   final url = media.remoteUrl(hymn, MediaKind.partitura);
-  final key = local?.path ?? url;
+  final key = local?.path ?? (shared ? 'compartida-${hymn.id}' : url);
   if (key == null) {
     throw const MediaNotAvailable('Partitura aún no disponible.');
   }
   final cached = _cache.remove(key);
   if (cached != null) return _cache[key] = cached;
 
+  // La partitura que descargó la otra app (Loores al Rey / Acordes IASDMR).
+  final sharedBytes = local == null && shared
+      ? await media.readShared(hymn, MediaKind.partitura)
+      : null;
   final PdfDocument doc;
   if (local != null) {
     doc = await PdfDocument.openFile(local.path);
+  } else if (sharedBytes != null) {
+    doc = await PdfDocument.openData(sharedBytes);
   } else {
     final res = await http
         .get(Uri.parse(url!))

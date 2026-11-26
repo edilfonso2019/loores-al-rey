@@ -64,9 +64,12 @@ def acordes_de_pagina(pagina):
             fin = p["x1"]
         if actual:
             palabras.append((x_ini, actual))
-        for x, w in palabras:
-            if ACORDE.match(w):
-                encontrados.append({"x": round(x, 1), "y": round(r[0]["y"], 1), "acorde": w})
+        validas = [(x, w) for x, w in palabras if ACORDE.match(w)]
+        # En un renglón de letra puede haber una palabra suelta como "A": solo cuenta si casi todo son acordes.
+        if len(validas) < 0.6 * len(palabras):
+            continue
+        for x, w in validas:
+            encontrados.append({"x": round(x, 1), "y": round(r[0]["y"], 1), "acorde": w})
     return encontrados
 
 

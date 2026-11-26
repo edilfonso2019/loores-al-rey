@@ -86,7 +86,7 @@ class PlayerService extends ChangeNotifier {
       if (uri == null) {
         throw const MediaNotAvailable('Este himnario aún no tiene pistas.');
       }
-      if (!_media.isDownloaded(h, k)) {
+      if (!_media.isOffline(h, k)) {
         final ok = await _media.checkAvailable(h, k);
         if (ok == false) {
           throw MediaNotAvailable(MediaService.notAvailableMessage(h, k));
@@ -125,7 +125,7 @@ class PlayerService extends ChangeNotifier {
       // Una carga vieja interrumpida por otra más nueva no es un error.
       if (!isCurrent(h, k)) return;
       _fail(
-        _media.isDownloaded(h, k)
+        _media.isOffline(h, k)
             ? 'No se pudo abrir el archivo descargado.'
             : 'No se pudo reproducir. Revisa tu conexión.',
       );
